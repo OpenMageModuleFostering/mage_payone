@@ -36,6 +36,40 @@ class Payone_Core_Checkout_OnepageController extends Mage_Checkout_OnepageContro
 {
     protected $eventPrefix = 'payone_core_checkout_onepage';
 
+    protected static $_aLoadedScopes = array();
+    
+    protected static function _addLoadedScope($sScope) {
+        self::$_aLoadedScopes[] = $sScope;
+    }
+    
+    /**
+     * Predispatch: should set layout area
+     *
+     * @return Mage_Checkout_OnepageController
+     */
+    public function preDispatch()
+    {
+        // only extend the function in compiler-mode
+        if (defined('COMPILER_INCLUDE_PATH')) {
+            /*
+             * This basically disables the usage ob the /includes/src/__checkout.php file, because there were autoloader problems. ( Mage-205 )
+             * The files will be loaded "normally" from the single files, when the verifyPaymentAction from the Payone controller was called
+             */
+            
+            $sRouteName = $this->getRequest()->getRouteName();
+            if($sRouteName == 'payone_core') {
+                $sRouteName = 'checkout';
+            }
+
+            if(array_search($sRouteName, self::$_aLoadedScopes) === false) {
+                self::_addLoadedScope($sRouteName);
+            } else {
+                $this->setFlag('', self::FLAG_NO_PRE_DISPATCH, 1);
+            }
+        }
+        return parent::preDispatch();
+    }
+    
     /**
      * verfiy payment ajax action
      *

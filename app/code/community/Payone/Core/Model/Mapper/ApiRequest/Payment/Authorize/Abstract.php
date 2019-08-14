@@ -147,9 +147,10 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
         /** load correct narrative text from config */
         if ($paymentMethod instanceof Payone_Core_Model_Payment_Method_Creditcard) {
             $narrativeText = $this->getNarrativeText('creditcard');
-        }
-        elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_DebitPayment) {
+        } elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_DebitPayment) {
             $narrativeText = $this->getNarrativeText('debit_payment');
+        } elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_Wallet && $this->_getWalletType() == Payone_Api_Enum_WalletType::PAYDIREKT) {
+            $narrativeText = $order->getIncrementId();
         }
         $request->setNarrativeText($narrativeText);
 
@@ -411,11 +412,6 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
 //            $params['va'] = number_format($itemData->getTaxPercent(), 0, '.', '');
             $params['va'] = round( $itemData->getTaxPercent() * 100 );   // transfer vat in basis point format [#MAGE-186]
 
-            if ($this->getPaymentMethod()->mustTransmitInvoicingItemTypes()) {
-                $params['it'] = Payone_Api_Enum_InvoicingItemType::GOODS;
-            }
-
-
             $item = new Payone_Api_Request_Parameter_Invoicing_Item();
             $item->init($params);
             $invoicing->addItem($item);
@@ -534,15 +530,7 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
         }
         elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_Wallet) {
             $payment = new Payone_Api_Request_Parameter_Authorization_PaymentMethod_Wallet();
-            $sType = false;
-            
-            $aPostPayment = Mage::app()->getRequest()->getPost('payment');
-            if($aPostPayment && array_key_exists('payone_wallet_type', $aPostPayment)) {
-                $sType = $aPostPayment['payone_wallet_type'];
-            } else {
-                $sType = Payone_Api_Enum_WalletType::PAYPAL_EXPRESS;
-            }
-            $payment->setWallettype($sType);
+            $payment->setWallettype($this->_getWalletType());
             $isRedirect = true;
         }
         elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_DebitPayment) {
@@ -590,6 +578,18 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
         }
 
         return $payment;
+    }
+    
+    protected function _getWalletType() {
+        $sType = false;
+
+        $aPostPayment = Mage::app()->getRequest()->getPost('payment');
+        if($aPostPayment && array_key_exists('payone_wallet_type', $aPostPayment)) {
+            $sType = $aPostPayment['payone_wallet_type'];
+        } else {
+            $sType = Payone_Api_Enum_WalletType::PAYPAL_EXPRESS;
+        }
+        return $sType;
     }
 
     /**
@@ -662,9 +662,10 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
         $narrativeText = '';
         if ($type === 'creditcard') {
             $narrativeText = $parameterNarrativeText->getCreditcard();
-        }
-        elseif ($type === 'debit_payment') {
+        } elseif ($type === 'debit_payment') {
             $narrativeText = $parameterNarrativeText->getDebitPayment();
+        } elseif ($type === 'paydirekt') {
+            $narrativeText = $parameterNarrativeText->getPaydirekt();
         }
 
         $substitutionArray = array(

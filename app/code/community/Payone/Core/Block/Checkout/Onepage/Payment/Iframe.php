@@ -16,7 +16,7 @@
  * @package         Payone_Core_Block
  * @subpackage      Checkout
  * @copyright       Copyright (c) 2015 <kontakt@fatchip.de> - www.fatchip.com
- * @author          Robert Müller <robert.mueller@fatchip.de>
+ * @author          Robert Mï¿½ller <robert.mueller@fatchip.de>
  * @license         <http://www.gnu.org/licenses/> GNU General Public License (GPL 3)
  * @link            http://www.fatchip.de
  */
@@ -83,9 +83,11 @@ class Payone_Core_Block_Checkout_Onepage_Payment_Iframe extends Mage_Core_Block_
     public function getIframeHeader() {
         $sPaymentId = $this->getPaymentType();
         switch ($sPaymentId) {
+        /*
             case 'payone_wallet':
                 $sHeader = $this->__('Payment with Yapital');
                 break;
+        */
             case 'payone_creditcard_iframe':
                 $sHeader = $this->__('Payment with creditcard');
                 break;
@@ -96,11 +98,13 @@ class Payone_Core_Block_Checkout_Onepage_Payment_Iframe extends Mage_Core_Block_
     public function getIframeText() {
         $sPaymentId = $this->getPaymentType();
         switch ($sPaymentId) {
+        /*
             case 'payone_wallet':
                 $sText = $this->__('There are 2 possibilities to pay with Yapital. Either you open the Yapital-app, select payment from the app-menu and scan the QR-code or you click the orange LOGIN button and log in on the next site, using your Yapital-login-data. After a successful transaction you will be redirected back to the shop.');
                 $sText .= '<br><br>';
                 $sText .= $this->__('Every transaction is handled in realtime with your Yapital-account. Your bankdata is not transmitted by Yapital, only the necessary transactiondata.');
                 break;
+        */
             case 'payone_creditcard_iframe':
                 $sText = false;
                 break;

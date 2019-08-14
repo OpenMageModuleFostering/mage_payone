@@ -30,7 +30,7 @@
  * @license         <http://www.gnu.org/licenses/> GNU General Public License (GPL 3)
  * @link            http://www.noovias.com
  */
-class Payone_Licensemanager_Adminhtml_TestController extends Mage_Adminhtml_Controller_Action
+class Payone_Licensemanager_Adminhtml_Payonelicensemanager_TestController extends Mage_Adminhtml_Controller_Action
 {
     public function indexAction()
     {

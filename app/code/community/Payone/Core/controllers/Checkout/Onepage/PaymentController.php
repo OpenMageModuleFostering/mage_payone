@@ -40,6 +40,9 @@ class Payone_Core_Checkout_Onepage_PaymentController extends Payone_Core_Control
     public function backAction()
     {
         try {
+            $oSession = Mage::getSingleton('checkout/session');
+            $oSession->unsPayoneIsRedirectedToPayPal();
+            
             $this->checkoutCancel(true);
         } catch (Exception $e) {
             $this->handleException($e);
@@ -54,6 +57,9 @@ class Payone_Core_Checkout_Onepage_PaymentController extends Payone_Core_Control
     public function successAction()
     {
         try {
+            $oSession = Mage::getSingleton('checkout/session');
+            $oSession->unsPayoneIsRedirectedToPayPal();
+            
             $success = $this->checkoutSucccess();
 
             if ($success === true) {
@@ -78,6 +84,9 @@ class Payone_Core_Checkout_Onepage_PaymentController extends Payone_Core_Control
     public function errorAction()
     {
         try {
+            $oSession = Mage::getSingleton('checkout/session');
+            $oSession->unsPayoneIsRedirectedToPayPal();
+            
             $this->checkoutCancel(true);
         } catch (Exception $e) {
             $this->handleException($e);

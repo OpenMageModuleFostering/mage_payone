@@ -345,6 +345,7 @@
 "Credit Card Type","Kreditkartentyp"
 "Credit Card Number","Kreditkartennummer"
 "Expiration Date","Verfallsdatum"
+"Please fill in all required fields","Bitte f&uuml;llen Sie alle Pflichtfelder aus"
 
 "Account holder: %s","Kontoinhaber: %s"
 "Account number: xxx%s","Kontonummer: xxx%s"
@@ -364,6 +365,7 @@
 
 ">>>SDK TRANSLATIONS<<<",">>>SDK TRANSLATIONS<<<"
 "PAYPAL_EXPRESS","Paypal Express"
+"PAYDIREKT","Paydirekt"
 
 "YES","Ja"
 "NO","Nein"
@@ -971,3 +973,6 @@
 "Firstname","Vorname"
 "Lastname","Nachname"
 "What is this?","Was ist das?"
+
+"Always","Immer"
+"Only on first order with this card","Bei erster Bestellung mit der Karte"
