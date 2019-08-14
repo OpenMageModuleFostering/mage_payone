@@ -3,11 +3,11 @@
     "type": "magento-module",
     "license": "Open-Software-License-(OSL)",
     "homepage": "",
-    "description": "PAYONE FinanceGate payment gateway for all german online and offline payment methods including PayPal, all major Credit Cards and Maestro.",
+    "description": "PAYONE Payment for Magento: One partner. One contract. One payment.",
     "authors": [
     {
         "name": "PAYONE",
-        "email": "tech.support@payone.de"
+        "email": "magento@payone.de"
     }
 ],
     "suggest": {
