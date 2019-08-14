@@ -113,6 +113,7 @@ class Payone_Core_Model_Service_TransactionStatus_Process extends Payone_Core_Mo
             // @todo we should add order as param  cause observers may need it
         );
 
+        $this->dispatchEvent(self::EVENT_NAME_PREFIX . self::EVENT_NAME_ALL, $params);
         $this->dispatchEvent(self::EVENT_NAME_PREFIX . $transactionStatus->getTxaction(), $params);
     }
 
