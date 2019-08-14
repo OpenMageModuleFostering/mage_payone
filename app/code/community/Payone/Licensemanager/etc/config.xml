@@ -69,6 +69,18 @@
         </routers>
     </frontend>
 
+    <admin>
+        <routers>
+            <payone_licensemanager>
+                <use>admin</use>
+                <args>
+                    <module>Payone_Licensemanager</module>
+                    <frontName>payonelicensemanager</frontName>
+                </args>
+            </payone_licensemanager>
+        </routers>
+    </admin>
+
     <adminhtml>
         <translate>
             <modules>

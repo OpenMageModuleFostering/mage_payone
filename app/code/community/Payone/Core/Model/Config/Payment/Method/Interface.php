@@ -294,6 +294,36 @@ interface Payone_Core_Model_Config_Payment_Method_Interface
     public function getKlarnaCampaignCode();
 
     /**
+     * @param int $paypal_express_checkout_visible_on_cart)
+     */
+//    public function setPaypalExpressCheckoutVisibleOnCart($paypal_express_checkout_visible_on_cart);
+
+    /**
+     * @return int
+     */
+//    public function getPaypalExpressCheckoutVisibleOnCart();
+
+    /**
+     * @param int $paypal_express_address
+     */
+//    public function setPaypalExpressAddress($paypal_express_address);
+
+    /**
+     * @return int
+     */
+//    public function getPaypalExpressAddress();
+
+    /**
+     * @param string $paypal_express_image
+     */
+    public function setPaypalExpressImage($paypal_express_image);
+
+    /**
+     * @return string
+     */
+    public function getPaypalExpressImage();
+
+    /**
      * @param int $mid
      */
     public function setMid($mid);

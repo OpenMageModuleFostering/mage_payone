@@ -129,6 +129,21 @@ class Payone_Core_Model_Config_Payment_Method
     /**
      * @var int
      */
+//    protected $paypal_express_checkout_visible_on_cart = 0;
+
+    /**
+     * @var int
+     */
+//    protected $paypal_express_address = 0;
+
+    /**
+     * @var string
+     */
+    protected $paypal_express_image = '';
+
+    /**
+     * @var int
+     */
     protected $check_cvc = 0;
     /**
      * @var int
@@ -491,6 +506,54 @@ class Payone_Core_Model_Config_Payment_Method
     public function getKlarnaCampaignCode()
     {
         return $this->klarna_campaign_code;
+    }
+
+    /**
+     * @param int $paypal_express_checkout_visible_on_cart
+     */
+//    public function setPaypalExpressCheckoutVisibleOnCart($paypal_express_checkout_visible_on_cart)
+//    {
+//        $this->paypal_express_checkout_visible_on_cart = $paypal_express_checkout_visible_on_cart;
+//    }
+
+    /**
+     * @return int
+     */
+//    public function getPaypalExpressCheckoutVisibleOnCart()
+//    {
+//        return $this->paypal_express_checkout_visible_on_cart;
+//    }
+
+    /**
+     * @param int $paypal_express_address
+     */
+//    public function setPaypalExpressAddress($paypal_express_address)
+//    {
+//        $this->paypal_express_address = $paypal_express_address;
+//    }
+
+    /**
+     * @return int
+     */
+//    public function getPaypalExpressAddress()
+//    {
+//        return $this->paypal_express_address;
+//    }
+
+    /**
+     * @param string $paypal_express_image
+     */
+    public function setPaypalExpressImage($paypal_express_image)
+    {
+        $this->paypal_express_image = $paypal_express_image;
+    }
+
+    /**
+     * @return string
+     */
+    public function getPaypalExpressImage()
+    {
+        return $this->paypal_express_image;
     }
 
     /**

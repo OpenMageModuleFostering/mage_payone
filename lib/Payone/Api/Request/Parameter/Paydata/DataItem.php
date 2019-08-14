@@ -15,7 +15,7 @@
  * @category        Payone
  * @package         Payone_Api
  * @subpackage      Request
- * @author          Ronny Schröder <www.imk24.de>
+ * @author          Ronny Schröder
  * @license         <http://www.gnu.org/licenses/> GNU General Public License (GPL 3)
  */
 

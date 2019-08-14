@@ -16,16 +16,7 @@
  * @category        Payone
  * @package         Payone_Api
  * @subpackage      Request
- * @author          Ronny Schröder <www.imk24.de>
- * @license         <http://www.gnu.org/licenses/> GNU General Public License (GPL 3)
- */
-
-/**
- *
- * @category        Payone
- * @package         Payone_Api
- * @subpackage      Request
- * @copyright       Copyright (c) 2014 
+ * @author          Ronny Schröder
  * @license         <http://www.gnu.org/licenses/> GNU General Public License (GPL 3)
  */
 class Payone_Api_Request_Parameter_Paydata_Paydata extends Payone_Api_Request_Parameter_Abstract {
@@ -46,6 +37,47 @@ class Payone_Api_Request_Parameter_Paydata_Paydata extends Payone_Api_Request_Pa
         }
 
         return $data;
+    }
+
+    /**
+     * Returns paydata as assoc array
+     * Array
+     * (
+     *      [shipping_zip] => 79111
+     *      [shipping_country] => DE
+     *      [shipping_state] => Empty
+     *      [shipping_city] => Freiburg
+     *      [shipping_street] => ESpachstr. 1
+     *      [shipping_firstname] => Max
+     *      [shipping_lastname] => Mustermann
+     * )
+     * 
+     * @return array
+     */
+    public function toAssocArray() {
+        $tmp = array();
+
+        foreach ($this->getItems() as $item) {
+            $tmp[$item->getKey()] = $item->getData();
+        }
+        return $tmp;
+    }
+
+    /**
+     * @return string
+     */
+    public function __toString() {
+        $stringArray = array();
+        foreach ($this->toArray() as $key => $value) {
+            if ($key instanceof Payone_Api_Response_Interface) {
+                $stringArray[] = $key->__toString();
+            } else {
+                $stringArray[] = $key . '=' . $value;
+            }
+        }
+
+        $result = implode('|', $stringArray);
+        return $result;
     }
 
     /**

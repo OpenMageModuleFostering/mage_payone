@@ -328,6 +328,15 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
                         </wallet>
+                        <barzahlen translate="label">
+                            <label>Barzahlen</label>
+                            <frontend_model>payone_core/adminhtml_system_config_form_field_statusMapping</frontend_model>
+                            <backend_model>adminhtml/system_config_backend_serialized_array</backend_model>
+                            <sort_order>80</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </barzahlen>
                     </fields>
                 </status_mapping>
                 <payment_creditcard>
@@ -358,12 +367,61 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
                         </min_validity_period>
+                        <cc_request_type translate="label">
+                            <label>Request-type</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>payone_core/system_config_creditcardRequestType</source_model>
+                            <sort_order>20</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </cc_request_type>
+                        <cc_template translate="label">
+                            <label>Input-configuration</label>
+                            <frontend_model>payone_core/adminhtml_system_config_form_field_creditcardTemplate</frontend_model>
+                            <backend_model>adminhtml/system_config_backend_serialized_array</backend_model>
+                            <sort_order>30</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </cc_template>
                     </fields>
                 </payment_creditcard>
+                <payment_paypal_express_checkout>
+                    <label>Payment Paypal Express Checkout</label>
+                    <frontend_type>text</frontend_type>
+                    <sort_order>110</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>1</show_in_website>
+                    <show_in_store>1</show_in_store>
+                    <fields>
+                        <paypal_express_checkout_visible_on_cart translate="label">
+                            <label>PayPal Express Checkout Shortcut on Shopping Cart</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_yesno</source_model>
+                            <sort_order>10</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </paypal_express_checkout_visible_on_cart>
+                        <paypal_express_checkout_image translate="label">
+                            <label>Paypal Express Image Button</label>
+                            <frontend_type>image</frontend_type>
+                            <backend_model>adminhtml/system_config_backend_image</backend_model>
+                            <upload_dir config="system/filesystem/media" scope_info="1">payone</upload_dir>
+                            <base_url type="media" scope_info="1">payone</base_url>
+                            <sort_order>20</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                            <comment>Allowed file types: jpeg, gif, png.</comment>
+                        </paypal_express_checkout_image>
+                    </fields>
+                </payment_paypal_express_checkout>
                 <parameter_narrative_text>
                     <label>Narrative Text</label>
                     <frontend_type>text</frontend_type>
-                    <sort_order>110</sort_order>
+                    <sort_order>120</sort_order>
                     <show_in_default>1</show_in_default>
                     <show_in_website>1</show_in_website>
                     <show_in_store>1</show_in_store>
@@ -903,6 +961,24 @@
                     <show_in_store>1</show_in_store>
                     <fields></fields>
                 </template_cash_on_delivery>
+                <template_creditcard_iframe translate="label" module="payone_core">
+                    <label>Creditcard Channel Frontend</label>
+                    <frontend_type>text</frontend_type>
+                    <sort_order>7</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>1</show_in_website>
+                    <show_in_store>1</show_in_store>
+                    <fields></fields>
+                </template_creditcard_iframe>
+                <template_barzahlen translate="label" module="payone_core">
+                    <label>Barzahlen</label>
+                    <frontend_type>text</frontend_type>
+                    <sort_order>7</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>1</show_in_website>
+                    <show_in_store>1</show_in_store>
+                    <fields></fields>
+                </template_barzahlen>
             </groups>
         </payone_payment>
 
