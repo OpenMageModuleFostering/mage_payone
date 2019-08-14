@@ -24,7 +24,7 @@
 <config>
     <modules>
         <Payone_Core>
-            <version>3.4.6</version>
+            <version>3.4.7</version>
         </Payone_Core>
     </modules>
 
@@ -450,13 +450,13 @@
 
     <admin>
         <routers>
-            <payone_core>
-                <use>admin</use>
-                <args>
-                    <module>Payone_Core</module>
-                    <frontName>payone_core</frontName>
-                </args>
-            </payone_core>
+            <adminhtml>
+				<args>
+					<modules>
+						<payone_core before="Mage_Adminhtml">Payone_Core_Adminhtml</payone_core>
+					</modules>
+				</args>
+			</adminhtml>
         </routers>
     </admin>
 
@@ -484,7 +484,7 @@
                 </Payone_Core>
             </modules>
         </translate>
-
+        
     </adminhtml>
 
     <frontend>
@@ -650,8 +650,8 @@
             <creditcrating>
                 <integration_event>before_payment</integration_event>
                 <handle_response_error>continue_checkout</handle_response_error>
-                <payment_hint_text><![CDATA[Ich willige ein, dass von XY-Shop zum Zweck der eigenen Kreditprüfung ggf. Bonitätsinformationen auf der Basis mathematisch-statistischer Verfahren von der Firma ABC, Musterstr. 1, 11111 Musterhausen abgerufen und während der Dauer der Kundenbeziehung Adress- und ggf. Negativdaten an die ABC übermittelt werden, die bei berechtigtem Interesse Dritten für Kreditprüfungszwecke Bonitätsinformationen auf Basis mathematisch-statistischer Verfahren zur Verfügung stellt.
-Detaillierte Informationen zur Arbeitsweise der ABC finde ich unter www.abc.de/fghi…]]>
+                <payment_hint_text><![CDATA[Ich willige ein, dass von XY-Shop zum Zweck der eigenen Kreditpr&uuml;fung ggf. Bonit&auml;tsinformationen auf der Basis mathematisch-statistischer Verfahren von der Firma ABC, Musterstr. 1, 11111 Musterhausen abgerufen und w&auml;hrend der Dauer der Kundenbeziehung Adress- und ggf. Negativdaten an die ABC &Uuml;bermittelt werden, die bei berechtigtem Interesse Dritten f&uuml;r Kreditpr&uuml;fungszwecke Bonit&auml;tsinformationen auf Basis mathematisch-statistischer Verfahren zur Verf&uuml;gung stellt.
+Detaillierte Informationen zur Arbeitsweise der ABC finde ich unter www.abc.de/fghi...]]>
                 </payment_hint_text>
             </creditcrating>
         </payone_protect>

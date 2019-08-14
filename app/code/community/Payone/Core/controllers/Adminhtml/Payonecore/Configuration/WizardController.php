@@ -13,29 +13,30 @@
  * needs please refer to http://www.payone.de for more information.
  *
  * @category        Payone
- * @package         Payone_Licensemanager_controllers
- * @subpackage
+ * @package         Payone_Core_controllers
+ * @subpackage      Adminhtml_Configuration_Wizard
  * @copyright       Copyright (c) 2012 <info@noovias.com> - www.noovias.com
- * @author          Edward Mateja <edward.mateja@votum.de>
+ * @author          Matthias Walter <info@noovias.com>
  * @license         <http://www.gnu.org/licenses/> GNU General Public License (GPL 3)
- * @link            http://www.votum.de
+ * @link            http://www.noovias.com
  */
 
 /**
  *
  * @category        Payone
- * @package         Payone_Licensemanager_controllers
- * @subpackage
+ * @package         Payone_Core_controllers
+ * @subpackage      Adminhtml_Configuration_Wizard
  * @copyright       Copyright (c) 2012 <info@noovias.com> - www.noovias.com
  * @license         <http://www.gnu.org/licenses/> GNU General Public License (GPL 3)
  * @link            http://www.noovias.com
  */
-class Payone_Licensemanager_Adminhtml_TestController extends Mage_Adminhtml_Controller_Action
+class Payone_Core_Adminhtml_Payonecore_Configuration_WizardController
+    extends Payone_Core_Controller_Adminhtml_Abstract
 {
     public function indexAction()
     {
         $this->loadLayout();
         $this->renderLayout();
-        return $this;
     }
+
 }
