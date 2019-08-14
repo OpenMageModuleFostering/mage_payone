@@ -98,6 +98,27 @@ abstract class Payone_Api_Response_Authorization_Abstract
      */
     protected $paydata_content_format = NULL;
 
+    /**
+     * @var string
+     */
+    protected $clearing_instructionnote = NULL;
+    
+    /**
+     * @var string
+     */
+    protected $clearing_reference = NULL;
+    
+    /**
+     * @var string
+     */
+    protected $clearing_legalnote = NULL;
+    
+    /**
+     * @var string
+     */
+    protected $clearing_duedate = NULL;
+    
+    protected $paydata_clearing_reference = NULL;
 
     /**
      * @param string $clearing_bankaccount
@@ -331,6 +352,78 @@ abstract class Payone_Api_Response_Authorization_Abstract
      */
     public function getAddPaydataContentFormat() {
         return $this->paydata_content_format;
+    }
+    
+    /**
+     * @param string $clearing_instructionnote
+     */
+    public function setClearingInstructionnote($clearing_instructionnote)
+    {
+        $this->clearing_instructionnote = $clearing_instructionnote;
+    }
+    
+    /**
+     * @return string
+     */
+    public function getClearingInstructionnote()
+    {
+        return $this->clearing_instructionnote;
+    }
+    
+    /**
+     * @param string $clearing_reference
+     */
+    public function setClearingReference($clearing_reference)
+    {
+        $this->clearing_reference = $clearing_reference;
+    }
+    
+    /**
+     * @return string
+     */
+    public function getClearingReference()
+    {
+        return $this->clearing_reference;
+    }
+    
+    /**
+     * @param string $clearing_legalnote
+     */
+    public function setClearingLegalnote($clearing_legalnote)
+    {
+        $this->clearing_legalnote = $clearing_legalnote;
+    }
+    
+    /**
+     * @return string
+     */
+    public function getClearingLegalnote()
+    {
+        return $this->clearing_legalnote;
+    }
+    
+    /**
+     * @param string $clearing_duedate
+     */
+    public function setClearingDuedate($clearing_duedate)
+    {
+        $this->clearing_duedate = $clearing_duedate;
+    }
+    
+    /**
+     * @return string
+     */
+    public function getClearingDuedate()
+    {
+        return $this->clearing_duedate;
+    }
+    
+    public function getAddPaydataClearingReference() {
+        return $this->paydata_clearing_reference;
+    }
+
+    public function setAddPaydataClearingReference($sClearingReference) {
+        $this->paydata_clearing_reference = $sClearingReference;
     }
 
 }

@@ -175,7 +175,7 @@ class Payone_Core_Model_Service_Paypal_Express_Checkout
         }
 
         $this->_quote->reserveOrderId()->save();
-
+        
         $service = $this->getFactory()->getServicePaymentGenericpayment($this->_config);
         $mapper = $service->getMapper();
         $request = $mapper->mapExpressCheckoutParameters($this->_quote);

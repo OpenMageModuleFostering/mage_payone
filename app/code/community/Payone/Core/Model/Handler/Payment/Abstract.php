@@ -188,6 +188,10 @@ abstract class Payone_Core_Model_Handler_Payment_Abstract
             $order->setData('payone_payment_method_type',
                 $this->getPayment()->getData('payone_safe_invoice_type'));
         }
+        elseif ($this->getPaymentMethod() instanceof Payone_Core_Model_Payment_Method_Payolution) {
+            $order->setData('payone_payment_method_type',
+                $this->getPayment()->getData('payone_payolution_type'));
+        }
     }
 
     /**
@@ -221,6 +225,17 @@ abstract class Payone_Core_Model_Handler_Payment_Abstract
                 $payment->setPayoneClearingInstructionnote($response->getClearingInstructionnote());
                 $payment->setPayoneClearingLegalnote($response->getClearingLegalnote());
                 $payment->setPayoneClearingDuedate($response->getClearingDuedate());
+            }
+        } elseif($paymentMethod instanceof Payone_Core_Model_Payment_Method_Ratepay) {
+            $oSession = Mage::getSingleton('checkout/session');
+            $oSession->unsRatePayFingerprint();
+        }
+        
+        if($response instanceof Payone_Api_Response_Authorization_Abstract) {
+            if($response->getAddPaydataClearingReference()) {
+                $payment->setPayoneClearingReference($response->getAddPaydataClearingReference());
+            } elseif($response->getClearingReference()) {
+                $payment->setPayoneClearingReference($response->getClearingReference());
             }
         }
     }

@@ -72,7 +72,7 @@ class Payone_TransactionStatus_Service_ProtocolRequest
     public function protocolException(Exception $e, Payone_TransactionStatus_Request_Interface $request = null)
     {
         if ($request !== null) {
-            $this->getServiceApplyFilters()->apply($request);
+            $this->getServiceApplyFilters()->apply($request->toArray());
         }
 
         foreach ($this->loggers as $key => $logger)

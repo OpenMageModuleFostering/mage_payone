@@ -91,9 +91,9 @@ class Payone_Core_Model_Observer_Sales_Order
 
         if(!$payment->getOrder()->getCustomerIsGuest()) {
             $customer = $payment->getOrder()->getCustomer();
-            if($customer) {
+            if($customer && $customer->getId()) {
                 $customer->setPayoneLastPaymentMethod($payment->getMethod());
-                $customer->save();
+                $customer->getResource()->saveAttribute($customer, 'payone_last_payment_method');
             }
         }
 

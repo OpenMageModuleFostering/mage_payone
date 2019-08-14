@@ -30,7 +30,9 @@ class Payone_Api_Mapper_Request_Payment_Genericpayment
     public function map(Payone_Api_Request_Interface $request)
     {
         /** @var $request Payone_Api_Request_Authorization */
-        $this->mapAmount($request);
+        if($request->getAmount()) {
+            $this->mapAmount($request);
+        }
 
         return $request->toArray();
     }

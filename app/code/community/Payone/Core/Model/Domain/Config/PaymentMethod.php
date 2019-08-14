@@ -455,6 +455,7 @@ class Payone_Core_Model_Domain_Config_PaymentMethod
                 switch ($fieldKey) {
                     case 'klarna_config':
                     case 'fee_config':
+                    case 'ratepay_config':
                         unset($value['__empty']);
                         $value = empty($value) ? null : $value;
                         break;
@@ -584,6 +585,8 @@ class Payone_Core_Model_Domain_Config_PaymentMethod
         $this->unserializeData('fee_config');
         // prepare klarna config
         $this->unserializeData('klarna_config');
+        // prepare ratepay config
+        $this->unserializeData('ratepay_config');
         $this->explodeData('types');
         $this->explodeData('specificcountry');
         $this->explodeData('sepa_country');
@@ -617,6 +620,9 @@ class Payone_Core_Model_Domain_Config_PaymentMethod
 
         // prepare klarna_config
         $this->serializeData('klarna_config');
+        
+        // prepare ratepay_config
+        $this->serializeData('ratepay_config');
     }
 
     /**
@@ -690,6 +696,15 @@ class Payone_Core_Model_Domain_Config_PaymentMethod
     {
         $this->unserializeData('klarna_config');
         return $this->getData('klarna_config');
+    }
+    
+    /**
+     * @return array
+     */
+    public function getRatepayConfig()
+    {
+        $this->unserializeData('ratepay_config');
+        return $this->getData('ratepay_config');
     }
 
     /**

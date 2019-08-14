@@ -89,10 +89,13 @@
             <action method="addJs"><script>payone/core/sepa_input.js</script></action>
             <action method="addJs"><script>payone/core/sepa_validation.js</script></action>
             <action method="addJs"><script>payone/core/klarna.js</script></action>
+            <action method="addJs"><script>payone/core/ratepay.js</script></action>
+            <action method="addJs"><script>payone/core/payolution.js</script></action>
             <action method="addJs" ifconfig="payone_protect/general/enabled">
                 <script>payone/core/addresscheck.js</script>
             </action>
             <action method="addCss"><name>payone/core/mandate.css</name></action>
+            <action method="addCss"><name>payone/core/payolution.css</name></action>
         </reference>
 
         <reference name="head">
@@ -104,12 +107,10 @@
                    template="payone/core/payment/method/form/safe_invoice/klarna/scripts.phtml" />
         </reference>
 
-        <reference name="checkout.payment.methods">
-            <block type="core/template" name="additional" as="additional">
-                <block type="payone_core/checkout_onepage_payment_additional"
-                       name="payone_core_payment_additional"
-                       template="payone/core/checkout/onepage/payment/additional.phtml" />
-            </block>
+        <reference name="checkout.onepage.payment.methods_additional">
+            <block type="payone_core/checkout_onepage_payment_additional"
+                   name="payone_core_payment_additional"
+                   template="payone/core/checkout/onepage/payment/additional.phtml" />
         </reference>
     </checkout_onepage_index>
 
@@ -144,4 +145,5 @@
             <action method="setTemplate"><template>page/1column.phtml</template></action>
         </reference>
     </payone_core_iframe_show>
+
 </layout>

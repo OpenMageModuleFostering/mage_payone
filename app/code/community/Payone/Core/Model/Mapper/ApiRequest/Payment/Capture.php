@@ -72,6 +72,18 @@ class Payone_Core_Model_Mapper_ApiRequest_Payment_Capture
             }
         }
 
+        $paymentMethod = $this->getPaymentMethod();
+        if($paymentMethod instanceof Payone_Core_Model_Payment_Method_Ratepay) {
+            $info = $paymentMethod->getInfoInstance();
+
+            $payData = new Payone_Api_Request_Parameter_Paydata_Paydata();
+            $payData->addItem(new Payone_Api_Request_Parameter_Paydata_DataItem(
+                array('key' => 'shop_id', 'data' => $info->getPayoneRatepayShopId())
+            ));
+            $request->setPaydata($payData);
+            $request->setApiVersion('3.10');
+        }
+        
         $this->dispatchEvent($this->getEventName(), array('request' => $request, 'invoice' => $this->getInvoice()));
         $this->dispatchEvent($this->getEventPrefix() . '_all', array('request' => $request));
 
@@ -121,19 +133,15 @@ class Payone_Core_Model_Mapper_ApiRequest_Payment_Capture
             if ($this->isInvoiceLast() || $this->helperRegistry()->isPaymentCancelRegistered($payment)) {
                 // Invoice completes the order
                 $business->setSettleaccount(Payone_Api_Enum_Settleaccount::AUTO);
-            }
-            else {
+            } else {
                 // partial payment
                 $business->setSettleaccount(Payone_Api_Enum_Settleaccount::NO);
             }
-        }
-        elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_SafeInvoice
-                and $paymentMethod->getInfoInstance()->getPayoneSafeInvoiceType() == Payone_Api_Enum_FinancingType::BSV
-        ) {
+        } elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_SafeInvoice
+                && $paymentMethod->getInfoInstance()->getPayoneSafeInvoiceType() == Payone_Api_Enum_FinancingType::BSV) {
             // BillSAFE always settles account:
             $business->setSettleaccount(Payone_Api_Enum_Settleaccount::YES);
-        }
-        else {
+        } else {
             // all other can always use AUTO, regardless of complete or partial capture
             $business->setSettleaccount(Payone_Api_Enum_Settleaccount::AUTO);
         }

@@ -33,7 +33,9 @@
 <br/>
 <?php echo $this->__('Credit Card Number: %s', $this->escapeHtml($this->getCcNumberEnc())) ?>
 <br/>
-<?php echo $this->__('Expiration Date: %s/%s', $this->escapeHtml($this->getCcExpMonth()), $this->escapeHtml($this->getCcExpYear()));
+<?php if( $this->getCcExpMonth() != '0' && $this->getCcExpYear() != '0' ) {
+        echo $this->__('Expiration Date: %s/%s', $this->escapeHtml($this->getCcExpMonth()), $this->escapeHtml($this->getCcExpYear()));
+      }
 endif;?>
 <br/>
 <?php if ($this->getLastTransId() == ''): ?>

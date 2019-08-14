@@ -84,5 +84,21 @@ class Payone_Api_Response_Genericpayment_Approved extends Payone_Api_Response_Ge
     public function setPaydata($paydata) {
         $this->paydata = $paydata;
     }
+    
+    /**
+     * 
+     * @return Payone_Api_Request_Parameter_Paydata_Paydata
+     */
+    public function getPayDataArray() {
+        $aPayData = array();
+        foreach($this->getPayData()->getItems() as $item) {
+            $sCorrectedKey = strtolower($item->getKey());
+            $sCorrectedKey = str_replace('-', '_', $sCorrectedKey);
+            $aPayData[$sCorrectedKey] = $item->getData();
+        }
+        ksort($aPayData);
+        return $aPayData;
+    }
+
 
 }

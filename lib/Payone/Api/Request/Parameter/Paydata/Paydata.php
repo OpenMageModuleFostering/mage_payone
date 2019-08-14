@@ -32,10 +32,8 @@ class Payone_Api_Request_Parameter_Paydata_Paydata extends Payone_Api_Request_Pa
          * @var Payone_Api_Request_Parameter_Paydata_DataItem $item
          */
         foreach ($this->items as $item) {
-
             $data = array_merge($data, $item->toArray());
         }
-
         return $data;
     }
 

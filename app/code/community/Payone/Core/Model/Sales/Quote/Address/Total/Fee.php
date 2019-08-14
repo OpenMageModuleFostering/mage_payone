@@ -37,7 +37,6 @@ class Payone_Core_Model_Sales_Quote_Address_Total_Fee
     /** @var Payone_Core_Model_Factory */
     protected $factory = null;
 
-
     /**
      * @param Mage_Sales_Model_Quote_Address $address
      * @return Mage_Sales_Model_Quote_Address_Total_Abstract
@@ -64,6 +63,11 @@ class Payone_Core_Model_Sales_Quote_Address_Total_Fee
         if (!is_array($feeConfig) or !array_key_exists('fee_config', $feeConfig)) {
             return $this;
         }
+        
+        if ($payment && $payment->getId() && $payment->hasMethodInstance() && !$payment->getMethodInstance() instanceof Payone_Core_Model_Payment_Method_Abstract) {
+            $this->_setNewPayonePaymentAmount($quote, $address, 0);
+            return parent::collect($address);
+        }
 
         /*
          * This does not work here:
@@ -82,17 +86,20 @@ class Payone_Core_Model_Sales_Quote_Address_Total_Fee
         if(isset($feeConfig['fee_type'][0]) && $feeConfig['fee_type'][0] == 'percent') {
             $paymentFee = $dSubTotal * $paymentFee / 100;
         }
-        
 
-        $oldShippingAmount = $address->getBaseShippingAmount();
-        $newShippingAmount = $oldShippingAmount + $paymentFee;
-
-        $address->setBaseShippingAmount($newShippingAmount);
-        $address->setShippingAmount(
-            $quote->getStore()->convertPrice($newShippingAmount, false)
-        );
+        $this->_setNewPayonePaymentAmount($quote, $address, $paymentFee);
 
         return parent::collect($address);
+    }
+    
+    protected function _setNewPayonePaymentAmount($oQuote, $oAddess, $dPaymentFee) {
+        $dOldShippingAmount = $oAddess->getBaseShippingAmount();
+        $dNewShippingAmount = $dOldShippingAmount + $dPaymentFee;
+
+        $oAddess->setBaseShippingAmount($dNewShippingAmount);
+        $oAddess->setShippingAmount(
+            $oQuote->getStore()->convertPrice($dNewShippingAmount, false)
+        );        
     }
 
     /**

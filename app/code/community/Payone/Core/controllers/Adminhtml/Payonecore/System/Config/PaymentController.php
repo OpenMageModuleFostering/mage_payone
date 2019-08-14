@@ -141,11 +141,17 @@ class Payone_Core_Adminhtml_Payonecore_System_Config_PaymentController
 
             try {
                 $model->save();
+                
                 Mage::getSingleton('adminhtml/session')->addSuccess(
                     $this->helper()->__('PaymentMethod-Config was successfully saved.')
                 );
                 Mage::getSingleton('adminhtml/session')->setFormData(false);
 
+                if($model->getCode() == 'ratepay' && $model->getId()) { // redirect to edit-page so that the ratepay shop-IDs get requested from API
+                    $this->_redirect('*/*/edit', array('id' => $model->getId(), '_current' => true));
+                    return;
+                }
+                
                 $this->_redirect('*/*/', array('_current' => true));
                 return;
             }
