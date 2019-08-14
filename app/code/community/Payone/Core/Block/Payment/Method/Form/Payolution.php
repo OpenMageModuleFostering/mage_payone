@@ -30,7 +30,7 @@ class Payone_Core_Block_Payment_Method_Form_Payolution extends Payone_Core_Block
     /**
      * @var string
      */
-    protected $_sAcceptanceBaseUrl = 'https://payment.payolution.com/payolution-payment/infoport/dataprivacydeclaration?mId=';
+    protected $_sAcceptanceBaseUrl = 'https://payment.payolution.com/payolution-payment/infoport/dataprivacydeclaration';
 
     /**
      * @var bool
@@ -105,7 +105,7 @@ class Payone_Core_Block_Payment_Method_Form_Payolution extends Payone_Core_Block
             Payone_Core_Model_System_Config_PaymentMethodCode::PAYOLUTIONDEBIT => Payone_Api_Enum_PayolutionType::PYD,
         );
     }
-    
+
     /**
      * @return mixed
      */
@@ -164,13 +164,31 @@ class Payone_Core_Block_Payment_Method_Form_Payolution extends Payone_Core_Block
      */
     public function isTelephoneRequired()
     {
-        // telephone is mandatory for any country in case of Klarna
-        $telephone = $this->getQuote()->getBillingAddress()->getTelephone();
-        if (empty($telephone)) {
+        // telephone is mandatory for Payolution orders with a billing address in the netherlands
+        $sTelephone = $this->getQuote()->getBillingAddress()->getTelephone();
+        $sBillingCountry = $this->getQuote()->getBillingAddress()->getCountryId();
+        if (empty($sTelephone) && $sBillingCountry == 'NL') {
             return true;
         }
 
         return false;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isSepaDataRequired()
+    {
+        if ($this->getMethodCode() == Payone_Core_Model_System_Config_PaymentMethodCode::PAYOLUTIONINSTALLMENT) {
+            $sBillingCountry = $this->getQuote()->getBillingAddress()->getCountryId();
+            $sCurrency = Mage::app()->getStore()->getCurrentCurrencyCode();
+
+            if (in_array($sBillingCountry, array('GB', 'UK', 'CH')) && in_array($sCurrency, array('GBP', 'CHF'))) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -213,12 +231,26 @@ class Payone_Core_Block_Payment_Method_Form_Payolution extends Payone_Core_Block
     }
 
     /**
+     * Generate the payolution privacy declaration url
+     *
+     * @return string
+     */
+    protected function _getAcceptanceUrl()
+    {
+        $sLocaleCode = Mage::app()->getLocale()->getLocaleCode();
+        $sCompany = $this->getMethod()->getConfig()->getCompanyName();
+        $sUrl  = $this->_sAcceptanceBaseUrl.'?mId='.base64_encode($sCompany);
+        $sUrl .= '&lang='.substr($sLocaleCode, 0, 2);
+        $sUrl .= '&territory='.substr($sLocaleCode, 3, 2);
+        return $sUrl;
+    }
+
+    /**
      * @return bool|mixed|string
      */
     public function getPayolutionAcceptanceText() 
     {
-        $sCompany = $this->getMethod()->getConfig()->getCompanyName();
-        $sUrl = $this->_sAcceptanceBaseUrl . base64_encode($sCompany);
+        $sUrl = $this->_getAcceptanceUrl();
         $sContent = file_get_contents($sUrl);
         $sPage = false;
         if (!empty($sContent) && stripos($sContent, 'payolution') !== false && stripos($sContent, '<header>') !== false) {
