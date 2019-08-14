@@ -24,7 +24,7 @@
 <config>
     <modules>
         <Payone_Core>
-            <version>3.3.8</version>
+            <version>3.3.9</version>
         </Payone_Core>
     </modules>
 

@@ -33,6 +33,8 @@
 class Payone_Core_Block_Payment_Method_Form_Creditcard
     extends Payone_Core_Block_Payment_Method_Form_Abstract
 {
+    
+    protected $_aHostedParams = null;
     protected $hasTypes = true;
 
     protected function _construct()
@@ -304,4 +306,91 @@ class Payone_Core_Block_Payment_Method_Form_Creditcard
     {
         return '';
     }
+    
+    public function getCCRequestType() {
+        return $this->getConfigGeneral()->getPaymentCreditcard()->getCcRequestType();
+    }
+    
+    protected function _getHostedParams() {
+        if($this->_aHostedParams === null) {
+            $aParams = array();
+            
+            $sTemplate = $this->getConfigGeneral()->getPaymentCreditcard()->getCcTemplate();
+            if($sTemplate) {
+                $aParams = unserialize($sTemplate);
+            }
+            $this->_aHostedParams = $aParams;
+        }
+        return $this->_aHostedParams;
+    }
+    
+    public function getHostedParam($sParam) {
+        $aParams = $this->_getHostedParams();
+        if(isset($aParams[$sParam])) {
+            return $aParams[$sParam];
+        }
+        return '';
+    }
+    
+    /**
+     * @return string
+     */
+    public function getHostedClientApiConfigAsJson()
+    {
+        return json_encode($this->getHostedClientApiConfig());
+    }
+
+    /**
+     * @return array
+     */
+    public function getHostedClientApiConfig()
+    {
+        $params = array(
+            'gateway' => $this->getHostedCreditcardcheckParams(),
+        );
+
+        return $params;
+    }
+
+    /**
+     * Returns the gateways, one for each payment configuration
+     * @return array
+     */
+    public function getHostedCreditcardcheckParams()
+    {
+        $paymentConfigs = $this->getPaymentConfigs();
+        /** @var $helper Payone_Core_Helper_Data */
+        $helper = $this->helper('payone_core');
+        $factory = $this->getFactory();
+        $helperUrl = $this->getFactory()->helperUrl();
+
+        $serviceGenerateHash = $factory->getServiceClientApiGenerateHash();
+
+        $language = $helper->getDefaultLanguage();
+
+        $gateways = array();
+        foreach ($paymentConfigs as $paymentConfig) {
+            $request = $factory->getRequestClientApiCreditCardCheck();
+            $params = array(
+                'aid' => $paymentConfig->getAid(),
+                'mid' => $paymentConfig->getMid(),
+                'portalid' => $paymentConfig->getPortalid(),
+                'mode' => $paymentConfig->getMode(),
+                'encoding' => 'UTF-8',
+                'storecarddata' => 'yes',
+            );
+            $request->init($params);
+            $request->setResponsetype('JSON');
+
+            $hash = $serviceGenerateHash->generate($request, $paymentConfig->getKey());
+
+            $request->setHash($hash);
+
+            $params = $request->toArray();
+
+            $gateways[$paymentConfig->getId()] = $params;
+        }
+        return $gateways;
+    }
+    
 }
