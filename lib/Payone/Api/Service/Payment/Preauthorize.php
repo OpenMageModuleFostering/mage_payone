@@ -74,11 +74,7 @@ class Payone_Api_Service_Payment_Preauthorize
 
             $requestParams = $this->getMapperRequest()->map($request);
 
-            if($request->isFrontendApiCall() === false) {
-                $responseRaw = $this->getAdapter()->request($requestParams);
-            } else {
-                $responseRaw = $request->getFrontendApiResponse();
-            }
+            $responseRaw = $this->getAdapter()->request($requestParams);
 
             $response = $this->getMapperResponse()->map($responseRaw);
 

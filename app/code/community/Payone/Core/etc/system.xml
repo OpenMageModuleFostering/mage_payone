@@ -328,15 +328,6 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
                         </wallet>
-                        <barzahlen translate="label">
-                            <label>Barzahlen</label>
-                            <frontend_model>payone_core/adminhtml_system_config_form_field_statusMapping</frontend_model>
-                            <backend_model>adminhtml/system_config_backend_serialized_array</backend_model>
-                            <sort_order>80</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                        </barzahlen>
                     </fields>
                 </status_mapping>
                 <payment_creditcard>
@@ -367,24 +358,6 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
                         </min_validity_period>
-                        <cc_request_type translate="label">
-                            <label>Request-type</label>
-                            <frontend_type>select</frontend_type>
-                            <source_model>payone_core/system_config_creditcardRequestType</source_model>
-                            <sort_order>20</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                        </cc_request_type>
-                        <cc_template translate="label">
-                            <label>Input-configuration</label>
-                            <frontend_model>payone_core/adminhtml_system_config_form_field_creditcardTemplate</frontend_model>
-                            <backend_model>adminhtml/system_config_backend_serialized_array</backend_model>
-                            <sort_order>30</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                        </cc_template>
                     </fields>
                 </payment_creditcard>
                 <payment_paypal_express_checkout>
@@ -961,24 +934,6 @@
                     <show_in_store>1</show_in_store>
                     <fields></fields>
                 </template_cash_on_delivery>
-                <template_creditcard_iframe translate="label" module="payone_core">
-                    <label>Creditcard Channel Frontend</label>
-                    <frontend_type>text</frontend_type>
-                    <sort_order>7</sort_order>
-                    <show_in_default>1</show_in_default>
-                    <show_in_website>1</show_in_website>
-                    <show_in_store>1</show_in_store>
-                    <fields></fields>
-                </template_creditcard_iframe>
-                <template_barzahlen translate="label" module="payone_core">
-                    <label>Barzahlen</label>
-                    <frontend_type>text</frontend_type>
-                    <sort_order>7</sort_order>
-                    <show_in_default>1</show_in_default>
-                    <show_in_website>1</show_in_website>
-                    <show_in_store>1</show_in_store>
-                    <fields></fields>
-                </template_barzahlen>
             </groups>
         </payone_payment>
 

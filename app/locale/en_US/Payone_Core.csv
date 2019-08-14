@@ -22,8 +22,3 @@
 "BSV","BillSAFE"
 "KLV","Klarna"
 "KLS","Klarna"
-
-"FCPO_CC_ROW_CC_Number","Creditcardnumber"
-"FCPO_CC_ROW_CC_CVC","CVC security code"
-"FCPO_CC_ROW_CC_Month","Validity-month"
-"FCPO_CC_ROW_CC_Year","Validity-year"

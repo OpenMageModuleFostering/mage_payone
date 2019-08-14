@@ -99,10 +99,7 @@ class Payone_Core_PexpressController extends Payone_Core_Controller_Abstract
             $workOrderId = $this->_initWorkOrderId();
 
             $this->_checkout->returnFromPaypal($workOrderId);
-            $this->_redirect('*/*/review', array(
-                '_nosid' => true,
-                '_secure' => Mage::app()->getStore()->isCurrentlySecure())
-            );
+            $this->_redirect('*/*/review');
             return;
         } catch (Mage_Core_Exception $e) {
             $this->_getCheckoutSession()->addError($e->getMessage());
@@ -193,10 +190,7 @@ class Payone_Core_PexpressController extends Payone_Core_Controller_Abstract
             }
 
             $this->_initWorkOrderId(false); // no need in WorkOrderId anymore
-            $this->_redirect('checkout/onepage/success', array(
-                '_nosid' => true,
-                '_secure' => Mage::app()->getStore()->isCurrentlySecure())
-            );
+            $this->_redirect('checkout/onepage/success');
             return;
         }
         catch (Mage_Core_Exception $e) {
@@ -206,10 +200,7 @@ class Payone_Core_PexpressController extends Payone_Core_Controller_Abstract
             $this->_getSession()->addError($this->__('Unable to place the order.'));
             Mage::logException($e);
         }
-        $this->_redirect('*/*/review', array(
-            '_nosid' => true,
-            '_secure' => Mage::app()->getStore()->isCurrentlySecure())
-        );
+        $this->_redirect('*/*/review');
     }
 
     /**

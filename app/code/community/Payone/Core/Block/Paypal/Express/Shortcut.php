@@ -97,11 +97,9 @@ class Payone_Core_Block_Paypal_Express_Shortcut extends Mage_Core_Block_Template
             return $result;
         }
 
-        // check if we are in a secure environment
-        $isSecure = Mage::app()->getStore()->isCurrentlySecure();
         // set misc data
         $this->setShortcutHtmlId($this->helper('core')->uniqHash('ppe_shortcut_'))
-            ->setCheckoutUrl($this->getUrl($this->_startAction, array('_secure' => $isSecure)));
+            ->setCheckoutUrl($this->getUrl($this->_startAction));
 
         $this->setImageUrl(Mage::getModel('payone_core/service_paypal_express_checkout', array(
             'quote'  => $quote,

@@ -407,16 +407,4 @@ abstract class Payone_Api_Request_Abstract
     {
         $this->applyFilters = $applyFilters;
     }
-    
-    public function isFrontendApiCall() {
-        if($this instanceof Payone_Api_Request_Authorization_Abstract) {
-            $oOrder = Mage::getSingleton('checkout/session')->getQuote();
-            $oPayment = $oOrder->getPayment();
-            if($oPayment->getMethod() == 'payone_creditcard_iframe') {
-                return true;
-            }
-        }
-        return false;
-    }
-    
 }

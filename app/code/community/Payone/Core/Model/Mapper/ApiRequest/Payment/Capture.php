@@ -182,6 +182,10 @@ class Payone_Core_Model_Mapper_ApiRequest_Payment_Capture
                 $params['no'] = $number;
                 $params['pr'] = $itemData->getPriceInclTax();
 
+                if ($this->getPaymentMethod()->mustTransmitInvoicingItemTypes()) {
+                    $params['it'] = Payone_Api_Enum_InvoicingItemType::GOODS;
+                }
+
                 // We have to load the tax percentage from the order item
 //                $params['va'] = number_format($orderItem->getTaxPercent(), 0, '.', '');
                 $params['va'] = round( $orderItem->getTaxPercent() * 100 );   // transfer vat in basis point format [#MAGE-186]

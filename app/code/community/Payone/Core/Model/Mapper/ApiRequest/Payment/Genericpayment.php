@@ -95,9 +95,9 @@ class Payone_Core_Model_Mapper_ApiRequest_Payment_Genericpayment
         $request->setCurrency($quote->getQuoteCurrencyCode());
         $request->setWallet(new Payone_Api_Request_Parameter_Authorization_PaymentMethod_Wallet(array(
             'wallettype' => Payone_Api_Enum_WalletType::PAYPAL_EXPRESS,
-            'successurl' => Mage::helper('payone_core/url')->getMagentoUrl('*/*/return'),
-            'errorurl' => Mage::helper('payone_core/url')->getMagentoUrl('*/*/error'),
-            'backurl' => Mage::helper('payone_core/url')->getMagentoUrl('*/*/cancel')
+            'successurl' => Mage::getUrl('*/*/return'),
+            'errorurl' => Mage::getUrl('*/*/error'),
+            'backurl' => Mage::getUrl('*/*/cancel')
         )));
         return $request;
     }

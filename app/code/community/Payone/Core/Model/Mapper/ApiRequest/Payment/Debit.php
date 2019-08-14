@@ -157,7 +157,10 @@ class Payone_Core_Model_Mapper_ApiRequest_Payment_Debit
                 $params['de'] = $itemData->getName();
                 $params['no'] = $number;
                 $params['pr'] = $itemData->getPriceInclTax();
-                $params['it'] = Payone_Api_Enum_InvoicingItemType::GOODS;
+
+                if ($this->getPaymentMethod()->mustTransmitInvoicingItemTypes()) {
+                    $params['it'] = Payone_Api_Enum_InvoicingItemType::GOODS;
+                }
 
 
                 // We have to load the tax percentage from the order item

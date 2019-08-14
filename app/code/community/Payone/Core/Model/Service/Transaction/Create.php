@@ -45,18 +45,12 @@ class Payone_Core_Model_Service_Transaction_Create extends Payone_Core_Model_Ser
     )
     {
         $transaction = $this->getFactory()->getModelTransaction();
-
-        if($request->isFrontendApiCall() === false) {
-            $transaction->load($response->getTxid(), 'txid'); // should not exist but to be sure load by txid
-
-            if ($transaction->hasData()) {
-                throw new Payone_Core_Exception_TransactionAlreadyExists($response->getTxid());
-            }
-            $transaction->setTxid($response->getTxid());
-        } else {
-            $transaction->setFrontendApiCall(1);
+        $transaction->load($response->getTxid(), 'txid'); // should not exist but to be sure load by txid
+        if ($transaction->hasData()) {
+            throw new Payone_Core_Exception_TransactionAlreadyExists($response->getTxid());
         }
 
+        $transaction->setTxid($response->getTxid());
         $transaction->setLastTxaction($response->getStatus());
         $transaction->setUserid($response->getUserid());
 

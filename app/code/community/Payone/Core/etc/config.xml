@@ -24,7 +24,7 @@
 <config>
     <modules>
         <Payone_Core>
-            <version>3.3.11</version>
+            <version>3.3.3</version>
         </Payone_Core>
     </modules>
 
@@ -533,16 +533,6 @@
                 <model>payone_core/payment_method_creditcard</model>
                 <group>payone</group>
             </payone_creditcard>
-            <payone_creditcard_iframe translate="title" module="payone_core">
-                <title>PAYONE - CreditCard Channel Frontend</title>
-                <model>payone_core/payment_method_creditcardIframe</model>
-                <group>payone</group>
-            </payone_creditcard_iframe>
-            <payone_barzahlen translate="title" module="payone_core">
-                <title>PAYONE - Barzahlen</title>
-                <model>payone_core/payment_method_barzahlen</model>
-                <group>payone</group>
-            </payone_barzahlen>
             <payone_cash_on_delivery translate="title" module="payone_core">
                 <title>PAYONE - Cash on Delivery</title>
                 <model>payone_core/payment_method_cashOnDelivery</model>
@@ -618,12 +608,6 @@
             <template_cash_on_delivery>
                 <use_global>1</use_global>
             </template_cash_on_delivery>
-            <template_creditcard_iframe>
-                <use_global>1</use_global>
-            </template_creditcard_iframe>
-            <template_barzahlen>
-                <use_global>1</use_global>
-            </template_barzahlen>
         </payone_payment>
         <payone_general>
             <global>
@@ -646,7 +630,6 @@
                 <online_bank_transfer>a:1:{s:18:"_1343118466182_182";a:2:{s:8:"txaction";a:1:{i:0;s:9:"appointed";}s:12:"state_status";a:1:{i:0;s:21:"processing|processing";}}}</online_bank_transfer>
                 <cash_on_delivery>a:1:{s:18:"_1338893625332_332";a:2:{s:8:"txaction";a:1:{i:0;s:9:"appointed";}s:12:"state_status";a:1:{i:0;s:21:"processing|processing";}}}</cash_on_delivery>
                 <wallet>a:1:{s:18:"_1343137411652_652";a:2:{s:8:"txaction";a:1:{i:0;s:9:"appointed";}s:12:"state_status";a:1:{i:0;s:21:"processing|processing";}}}</wallet>
-                <barzahlen>a:1:{s:23:"_payone_status_mapping4";a:2:{s:8:"txaction";a:1:{i:0;s:9:"appointed";}s:12:"state_status";a:1:{i:0;s:21:"processing|processing";}}}</barzahlen>
             </status_mapping>
         </payone_general>
         <payone_protect>
@@ -669,7 +652,7 @@ Detaillierte Informationen zur Arbeitsweise der ABC finde ich unter www.abc.de/f
                 <cron_expr>* * * * *</cron_expr>
                 <valid_ips><![CDATA[213.178.72.196
 213.178.72.197
-185.60.20.*
+185.60.20.0
 217.70.200.*]]></valid_ips>
                 <proxy_mode>0</proxy_mode>
             </transactionstatus_processing>

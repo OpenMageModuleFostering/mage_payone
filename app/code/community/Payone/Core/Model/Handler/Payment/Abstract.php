@@ -65,36 +65,6 @@ abstract class Payone_Core_Model_Handler_Payment_Abstract
      */
     protected $request = null;
 
-    protected function _isIframePaymentOrder($oRequest) {
-        if($this->_isYapitalOrder($oRequest) || $this->_isCreditcardIframe($oRequest)) {
-            return true;
-        }
-        return false;
-    }
-    
-    protected function _getPaymentMethod() {
-        $oOrder = Mage::getSingleton('checkout/session')->getQuote();
-        $oPayment = $oOrder->getPayment();
-        return $oPayment->getMethod();
-    }
-    
-    protected function _isCreditcardIframe($oRequest) {
-        if($this->_getPaymentMethod() == 'payone_creditcard_iframe') {
-            return true;
-        }
-        return false;
-    }
-    
-    protected function _isYapitalOrder($oRequest) {
-        if($oRequest->getClearingtype() == 'wlt') {
-            $oPayment = $oRequest->getPayment();
-            if($oPayment->getWallettype() == 'YPL') {
-                return true;
-            }
-        }
-        return false;
-    }
-    
     /**
      * @param Payone_Api_Response_Interface $response
      * @return Payone_Core_Model_Handler_Payment_Abstract
@@ -111,15 +81,10 @@ abstract class Payone_Core_Model_Handler_Payment_Abstract
 
         if ($response->isApproved()) {
             $this->sendAvsMail($response);
-        } elseif ($response->isRedirect()) {
-            $sRedirectUrl = $response->getRedirecturl();
-            if($this->_isIframePaymentOrder($request)) {
-                $oSession = Mage::getSingleton('checkout/session');
-                $oSession->setPayoneIframeUrl($sRedirectUrl);
-                $oSession->setPayonePaymentType($this->_getPaymentMethod());
-                $sRedirectUrl = Mage::helper('payone_core/url')->getMagentoUrl('payone_core/iframe/show');
-            }
-            $paymentMethod->setRedirectUrl($sRedirectUrl);
+        }
+        elseif ($response->isRedirect()) {
+            $redirectUrl = $response->getRedirecturl();
+            $paymentMethod->setRedirectUrl($redirectUrl);
         }
 
         $this->updatePaymentByResponse($response);
@@ -147,11 +112,6 @@ abstract class Payone_Core_Model_Handler_Payment_Abstract
         // Update Order
         $this->updateOrder($order);
 
-        if(method_exists($response, 'getAddPaydataInstructionNotes') && $response->getAddPaydataInstructionNotes()) {
-            $oSession = Mage::getSingleton('checkout/session');
-            $oSession->setPayoneBarzahlenHtml(urldecode($response->getAddPaydataInstructionNotes()));
-        }
-        
         // Update Customer
         $this->updateCustomerByResponse($response);
 
