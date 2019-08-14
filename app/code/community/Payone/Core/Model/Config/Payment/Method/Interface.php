@@ -171,6 +171,16 @@ interface Payone_Core_Model_Config_Payment_Method_Interface
     public function getSepaMandateDownloadEnabled();
 
     /**
+     * @param int $customerFormDataSave
+     */
+    public function setCustomerFormDataSave($customerFormDataSave);
+
+    /**
+     * @return int
+     */
+    public function getCustomerFormDataSave();
+
+    /**
      * @param int $check_cvc
      */
     public function setCheckCvc($check_cvc);
@@ -272,6 +282,16 @@ interface Payone_Core_Model_Config_Payment_Method_Interface
      * @return array
      */
     public function getKlarnaConfig();
+
+    /**
+     * @param string $klarna_campaign_code
+     */
+    public function setKlarnaCampaignCode($klarna_campaign_code);
+
+    /**
+     * @return string
+     */
+    public function getKlarnaCampaignCode();
 
     /**
      * @param int $mid

@@ -122,6 +122,11 @@ class Payone_Core_Model_Config_Payment_Method
     protected $klarna_config = array();
 
     /**
+     * @var string
+     */
+    protected $klarna_campaign_code = '';
+
+    /**
      * @var int
      */
     protected $check_cvc = 0;
@@ -152,7 +157,10 @@ class Payone_Core_Model_Config_Payment_Method
      * @var int
      */
     protected $sepa_mandate_download_enabled = 1;
-
+    /**
+     * @var int
+     */
+    protected $customer_form_data_save = 0;
     /**
      * @var int
      */
@@ -467,6 +475,22 @@ class Payone_Core_Model_Config_Payment_Method
     public function getKlarnaConfig()
     {
         return $this->klarna_config;
+    }
+
+    /**
+     * @param string $klarna_campaign_code
+     */
+    public function setKlarnaCampaignCode($klarna_campaign_code)
+    {
+        $this->klarna_campaign_code = $klarna_campaign_code;
+    }
+
+    /**
+     * @return string
+     */
+    public function getKlarnaCampaignCode()
+    {
+        return $this->klarna_campaign_code;
     }
 
     /**
@@ -814,6 +838,22 @@ class Payone_Core_Model_Config_Payment_Method
     public function getSepaMandateDownloadEnabled()
     {
         return $this->sepa_mandate_download_enabled;
+    }
+
+    /**
+     * @param int $customerFormDataSave
+     */
+    public function setCustomerFormDataSave($customerFormDataSave)
+    {
+        $this->customer_form_data_save = $customerFormDataSave;
+    }
+
+    /**
+     * @return int
+     */
+    public function getCustomerFormDataSave()
+    {
+        return $this->customer_form_data_save;
     }
 
     /**

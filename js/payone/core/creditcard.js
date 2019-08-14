@@ -168,6 +168,9 @@ PAYONE.Handler.CreditCardCheck.OnepageCheckout = function () {
     this.haveToValidate = function () {
         var radio_p1_cc = $('p_method_payone_creditcard');
         if (radio_p1_cc != undefined && radio_p1_cc != null && radio_p1_cc.checked) {
+            if($('payone_cc_check_validation').value == 0) {
+                return 0;
+            }
             if (checkout.loadWaiting != false) {
                 return 0;
             }
@@ -224,6 +227,10 @@ PAYONE.Handler.CreditCardCheck.Admin = function () {
 
         if (radio_p1_cc != undefined && radio_p1_cc != null && radio_p1_cc.checked
             && $('payone_pseudocardpan').value == '') {
+
+            if($('payone_cc_check_validation').value == 0) {
+                return 0;
+            }
             return 1;
         }
         return 0;
@@ -361,3 +368,8 @@ PAYONE.Validation.CreditCard = function (config) {
         return this.config;
     };
 };
+
+function payoneChangedCreditCardNumber() {
+    $('payone_cc_check_validation').value = 1;
+    $('payone_creditcard_cc_number').addClassName('validate-cc-number');
+}

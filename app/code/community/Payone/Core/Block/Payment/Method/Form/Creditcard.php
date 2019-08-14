@@ -47,9 +47,13 @@ class Payone_Core_Block_Payment_Method_Form_Creditcard
      */
     public function getBillingName()
     {
-        $quote = $this->getQuote();
-        $address = $quote->getBillingAddress();
-        return $address->getFirstname() . ' ' . $address->getLastname();
+        $billingName = $this->getSavedCustomerData('cc_owner');
+        if(empty($billingName)) {
+            $quote = $this->getQuote();
+            $address = $quote->getBillingAddress();
+            $billingName = $address->getFirstname() . ' ' . $address->getLastname();
+        }
+        return $billingName;
     }
 
     /**
@@ -82,7 +86,29 @@ class Payone_Core_Block_Payment_Method_Form_Creditcard
      */
     public function getCreditCardType()
     {
-        return $this->getInfoData('cc_type');
+        $creditCardType = $this->getSavedCustomerData('cc_type');
+        if(empty($creditCardType)) {
+            $creditCardType = $this->getInfoData('cc_type');
+        }
+        return $creditCardType;
+    }
+
+    /**
+     * @return string
+     */
+    public function getPayoneConfigPaymentMethodId()
+    {
+        $payoneConfigPaymentMethodId = $this->getSavedCustomerData('payone_config_payment_method_id');
+        return $payoneConfigPaymentMethodId;
+    }
+
+    /**
+     * @return string
+     */
+    public function getCreditCardNumberEnc()
+    {
+        $creditCardNumberEnc = $this->getSavedCustomerData('cc_number_enc');
+        return $creditCardNumberEnc;
     }
 
     /**
@@ -90,7 +116,10 @@ class Payone_Core_Block_Payment_Method_Form_Creditcard
      */
     public function getCreditCardExpireYear()
     {
-        $ccExpYear = $this->getInfoData('cc_exp_year');
+        $ccExpYear = $this->getSavedCustomerData('cc_exp_year');
+        if(empty($ccExpYear)) {
+            $ccExpYear = $this->getInfoData('cc_exp_year');
+        }
         return $ccExpYear;
     }
 
@@ -99,10 +128,45 @@ class Payone_Core_Block_Payment_Method_Form_Creditcard
      */
     public function getCreditCardExpireMonth()
     {
-        $ccExpMonth = $this->getInfoData('cc_exp_month');
+        $ccExpMonth = $this->getSavedCustomerData('cc_exp_month');
+        if(empty($ccExpMonth)) {
+            $ccExpMonth = $this->getInfoData('cc_exp_month');
+        }
         return $ccExpMonth;
     }
 
+    /**
+     * @return string
+     */
+    public function getPayonePseudocardpan()
+    {
+        $payonePseudocardpan = $this->getSavedCustomerData('payone_pseudocardpan');
+        return $payonePseudocardpan;
+    }
+
+    /**
+     * @return string
+     */
+    public function getCreditCardCid()
+    {
+        $creditCardNumberEnc = $this->getSavedCustomerData('cc_number_enc');
+        if(empty($creditCardNumberEnc)) {
+            return '';
+        }
+        return 'xxx';
+    }
+
+    /**
+     * @return integer
+     */
+    public function getPayoneCreditCardCheckValidation()
+    {
+        $creditCardNumberEnc = $this->getSavedCustomerData('cc_number_enc');
+        if(empty($creditCardNumberEnc)) {
+            return 1;
+        }
+        return 0;
+    }
 
     /**
      * Retrieve credit card expire months
@@ -189,7 +253,7 @@ class Payone_Core_Block_Payment_Method_Form_Creditcard
                 'encoding' => 'UTF-8',
                 'language' => $language,
                 'solution_version' => $helper->getPayoneVersion(),
-                'solution_name' => 'noovias',
+                'solution_name' => 'votum',
                 'integrator_version' => $helper->getMagentoVersion(),
                 'integrator_name' => 'Magento',
                 'storecarddata' => 'yes',

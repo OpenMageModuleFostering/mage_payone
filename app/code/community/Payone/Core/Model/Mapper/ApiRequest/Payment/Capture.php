@@ -91,9 +91,9 @@ class Payone_Core_Model_Mapper_ApiRequest_Payment_Capture
         $request->setTxid($order->getPayment()->getLastTransId());
         $request->setSequencenumber($transaction->getNextSequenceNumber());
         $request->setCurrency($order->getOrderCurrencyCode());
-        $request->setAmount($this->getAmount());
+//        $request->setAmount($this->getAmount());
+        $request->setAmount($order->getGrandTotal());
         $request->setRequest(Payone_Api_Enum_RequestType::CAPTURE);
-        Mage::log('Capture', null, 'test.log', true);
     }
 
     /**
@@ -172,6 +172,7 @@ class Payone_Core_Model_Mapper_ApiRequest_Payment_Capture
                 if ($number <= 0) {
                     continue; // Do not map items with zero quantity
                 }
+                $params['it'] = Payone_Api_Enum_InvoicingItemType::GOODS;
                 $params['id'] = $itemData->getSku();
                 $params['de'] = $itemData->getName();
                 $params['no'] = $number;

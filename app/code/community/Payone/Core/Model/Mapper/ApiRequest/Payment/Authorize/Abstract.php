@@ -209,6 +209,13 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
             $personalData = $this->mapPersonalParametersSafeInvoiceKlarna($personalData);
         }
 
+        // Financing "Klarna" specific personal parameters mapping
+        if ($paymentMethod instanceof Payone_Core_Model_Payment_Method_Financing
+            and $paymentMethod->getInfoInstance()->getPayoneFinancingType() == Payone_Api_Enum_FinancingType::KLS
+        ) {
+            $personalData = $this->mapPersonalParametersSafeInvoiceKlarna($personalData);
+        }
+
         return $personalData;
     }
 
@@ -377,6 +384,7 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
                 continue; // Do not map items with zero quanity
             }
 
+            $params['it'] = Payone_Api_Enum_InvoicingItemType::GOODS;
             $params['id'] = $itemData->getSku();
             $params['pr'] = $itemData->getPriceInclTax();
             $params['no'] = $number;
@@ -478,6 +486,18 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
 
             $payment = new Payone_Api_Request_Parameter_Authorization_PaymentMethod_Financing();
             $payment->setFinancingtype($info->getPayoneFinancingType());
+
+            if($info->getPayoneFinancingType() == Payone_Api_Enum_FinancingType::KLS) {
+                $configPaymentMethodId = $info->getPayoneConfigPaymentMethodId();
+                $paymentConfig = $paymentMethod->getConfigPayment();
+
+
+                $payData = new Payone_Api_Request_Parameter_Paydata_Paydata();
+                $payData->addItem(new Payone_Api_Request_Parameter_Paydata_DataItem(
+                    array('key' => 'klsid', 'data' => $info->getPayoneKlarnaCampaignCode())
+                ));
+                $payment->setPaydata($payData);
+            }
 
             $isRedirect = true;
         }
