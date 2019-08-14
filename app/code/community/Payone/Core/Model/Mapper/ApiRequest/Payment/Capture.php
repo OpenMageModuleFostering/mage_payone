@@ -84,6 +84,7 @@ class Payone_Core_Model_Mapper_ApiRequest_Payment_Capture
     protected function mapDefaultCaptureParameters(Payone_Api_Request_Capture $request)
     {
         $order = $this->getOrder();
+        $invoice = $this->getInvoice();
 
         $transaction = $this->getFactory()->getModelTransaction();
         $transaction = $transaction->loadByPayment($order->getPayment());
@@ -91,8 +92,11 @@ class Payone_Core_Model_Mapper_ApiRequest_Payment_Capture
         $request->setTxid($order->getPayment()->getLastTransId());
         $request->setSequencenumber($transaction->getNextSequenceNumber());
         $request->setCurrency($order->getOrderCurrencyCode());
-//        $request->setAmount($this->getAmount());
-        $request->setAmount($order->getGrandTotal());
+        if(!empty($invoice) && $invoice->hasData()) {
+            $request->setAmount($invoice->getGrandTotal());
+        } else {
+            $request->setAmount($this->getAmount());
+        }
         $request->setRequest(Payone_Api_Enum_RequestType::CAPTURE);
     }
 

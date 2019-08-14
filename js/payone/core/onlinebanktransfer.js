@@ -52,7 +52,7 @@ function payoneSwitchOnlineBankTransfer(element, country, currency) {
     var bankGroupSelectAt = $('payone_online_bank_transfer_bank_group_at');
     var bankGroupSelectNl = $('payone_online_bank_transfer_bank_group_nl');
 
-    if (ElementValue == '' || typeCode == 'PFF' || typeCode == 'PFC') {
+    if (ElementValue == '' || typeCode == 'PFF' || typeCode == 'PFC' || typeCode == 'P24') {
         disableAll();
     } else if (typeCode == 'PNT') {
         disableAll();
