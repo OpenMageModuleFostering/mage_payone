@@ -163,8 +163,8 @@ class Payone_Core_Model_Service_Config_XmlGenerate
         /** @var $globalConfig Payone_Settings_Data_ConfigFile_Shop_Global */
         $globalConfig = $this->generateSettingsBySection('shop_global', $global);
         $statusMappingConfig = new Payone_Settings_Data_ConfigFile_Global_StatusMapping();
-        foreach ($statusMapping->toArray() as $keyClearingType => $mapping) {
-            $keyClearingType = $this->getPayoneShortKey($keyClearingType);
+        foreach ($statusMapping->toArray() as $paymentMethod => $mapping) {
+            $keyClearingType = $this->getPayoneShortKey($paymentMethod);
             if ($keyClearingType !== NULL) {
                 $data = array();
 
@@ -177,6 +177,7 @@ class Payone_Core_Model_Service_Config_XmlGenerate
                         $mapTo = implode('|', $value);
                     }
                     $singleMap['to'] = $mapTo;
+                    $singleMap['method'] = $paymentMethod;
 
                     array_push($data, $singleMap);
                 }
@@ -237,31 +238,6 @@ class Payone_Core_Model_Service_Config_XmlGenerate
                 }
                 $paymentMethodConfig->setTypes($types);
 
-            }
-
-            if ($paymentMethodConfig instanceof Payone_Settings_Data_ConfigFile_PaymentMethod_Financing) {
-                /** @var Payone_Settings_Data_ConfigFile_PaymentMethod_Financing $paymentMethodConfig */
-                $klarnaConfigs = $paymentMethod->getKlarnaConfig();
-                $klarnaConfigArray = array();
-                if (is_array($klarnaConfigs)) {
-                    foreach ($klarnaConfigs as $klarnaConfig) {
-                        $attributeCountry = '';
-                        if (is_array($klarnaConfig)) {
-                            if (array_key_exists('countries', $klarnaConfig)) {
-                                $attributeCountry = implode(',', $klarnaConfig['countries']);
-                            }
-                        }
-                        $attributeArray = array(
-                            'countries' => $attributeCountry
-                        );
-                        $configArray = array(
-                            'value' => array_key_exists('klarna_store_id', $klarnaConfig) ? $klarnaConfig['klarna_store_id'] : '',
-                            'attribute' => $attributeArray
-                        );
-                        array_push($klarnaConfigArray, $configArray);
-                    }
-                }
-                $paymentMethodConfig->setKlarnaConfig($klarnaConfigArray);
             }
 
             $feeConfigs = $paymentMethod->getFeeConfig();
@@ -403,8 +379,7 @@ class Payone_Core_Model_Service_Config_XmlGenerate
     {
         $key = strtoupper(uc_words($key, ''));
         $clearingTypes = $this->getFactory()->getModelSystemConfigClearingType();
-        $keyArray = $clearingTypes->toArray();
-        $keyArray = array_flip($keyArray);
+        $keyArray = $clearingTypes->toArrayNoFlip();
         if (array_key_exists($key, $keyArray)) {
             return $keyArray[$key];
         }

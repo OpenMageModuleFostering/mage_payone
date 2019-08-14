@@ -97,3 +97,4 @@ class Payone_Settings_Data_ConfigFile_PaymentMethod_Financing
         $this->klarna_config[] = $value;
     }
 }
+ 

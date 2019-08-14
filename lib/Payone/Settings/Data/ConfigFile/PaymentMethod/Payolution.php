@@ -20,13 +20,12 @@
  * @license         <http://www.gnu.org/licenses/> GNU General Public License (GPL 3)
  * @link            http://www.fatchip.com
  */
-class Payone_Settings_Data_ConfigFile_PaymentMethod_RatePay
+class Payone_Settings_Data_ConfigFile_PaymentMethod_Payolution
     extends Payone_Settings_Data_ConfigFile_PaymentMethod_Abstract
     implements Payone_Settings_Data_ConfigFile_Interface
 {
     /** @var string */
-    protected $key = Payone_Enum_ClearingType::RATEPAY;
-    protected $ratepay_config = array();
+    protected $key = Payone_Enum_ClearingType::PAYOLUTION;
 
     /**
      * @return string
@@ -34,30 +33,6 @@ class Payone_Settings_Data_ConfigFile_PaymentMethod_RatePay
     public function getKey()
     {
         return $this->key;
-    }
-    
-    /**
-     * @param array $ratepay_config
-     */
-    public function setRatepayConfig($ratepay_config)
-    {
-        $this->ratepay_config = $ratepay_config;
-    }
-
-    /**
-     * @return array
-     */
-    public function getRatepayConfig()
-    {
-        return $this->ratepay_config;
-    }
-
-    /**
-     * @param $value
-     */
-    public function addRatepayConfig($value)
-    {
-        $this->ratepay_config[] = $value;
     }
     
 }
