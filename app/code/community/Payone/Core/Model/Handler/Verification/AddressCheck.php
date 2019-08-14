@@ -155,10 +155,6 @@ class Payone_Core_Model_Handler_Verification_AddressCheck
         $newCity = $response->getCity();
         $newZip = $response->getZip();
         $newStreet = $response->getStreet();
-        $sNewStreet2 = $response->getStreet2();
-        if(!empty($sNewStreet2)) {
-            $newStreet = array($newStreet, $sNewStreet2);
-        }
 
         $address->setCity($newCity);
         $address->setPostcode($newZip);
@@ -179,7 +175,6 @@ class Payone_Core_Model_Handler_Verification_AddressCheck
             'city' => $response->getCity(),
             'postcode' => $response->getZip(),
             'street' => $response->getStreet(),
-            'street2' => $response->getStreet2(),
             'customermessage' => $this->helper()->__('Address corrected. Please confirm.'));
 
         return $correctedAddress;

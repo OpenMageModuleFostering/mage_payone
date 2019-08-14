@@ -43,11 +43,10 @@ class Payone_Core_Model_Observer_Sales_Order_Invoice
     {
         $event = $observer->getEvent();
         $this->invoice = $event->getInvoice();
-        if($this->getHelperRegistry()->registry('current_invoice') instanceof Mage_Sales_Model_Order_Invoice)
+        if(!$this->getHelperRegistry()->registry('current_invoice') instanceof Mage_Sales_Model_Order_Invoice)
         {
-            Mage::unregister('current_invoice');
+            $this->getHelperRegistry()->register('current_invoice',$event->getInvoice());
         }
-        $this->getHelperRegistry()->register('current_invoice',$event->getInvoice());
     }
 
     /**

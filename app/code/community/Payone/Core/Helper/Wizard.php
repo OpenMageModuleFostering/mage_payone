@@ -58,7 +58,7 @@ class Payone_Core_Helper_Wizard
             'next_page' => 'payment',
         ),
         'payment' => array(
-            'url' => '*/payonecore_configuration_wizard_page_payment/index',
+            'url' => '*/adminhtml_configuration_wizard_page_payment/index',
             'group_name' => 'payment',
             'header_text' => 'Payment-Method Configuration',
             'codes' => array(
@@ -196,7 +196,7 @@ class Payone_Core_Helper_Wizard
             $url = $nextPage['url'];
         }
         else {
-            $url = '*/payonecore_configuration_wizard_page/' . $nextPageName;
+            $url = '*/adminhtml_configuration_wizard_page/' . $nextPageName;
         }
         return $url;
     }

@@ -455,15 +455,6 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
                         </debit_payment>
-                        <!--paydirekt>
-                            <label>Paydirekt</label>
-                            <comment>Maximum 37 digits. Placeholders: {{order_increment_id}}</comment>
-                            <frontend_type>textarea</frontend_type>
-                            <sort_order>30</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                        </paydirekt-->
                     </fields>
                 </parameter_narrative_text>
             </groups>

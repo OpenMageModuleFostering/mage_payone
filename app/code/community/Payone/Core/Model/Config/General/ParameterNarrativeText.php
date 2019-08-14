@@ -41,10 +41,6 @@ class Payone_Core_Model_Config_General_ParameterNarrativeText
      * @var string
      */
     protected $debit_payment = '';
-    /**
-     * @var string
-     */
-    protected $paydirekt = '';
 
     /**
      * @param string $creditcard
@@ -76,21 +72,5 @@ class Payone_Core_Model_Config_General_ParameterNarrativeText
     public function getDebitPayment()
     {
         return $this->debit_payment;
-    }
-    
-    /**
-     * @param string $paydirekt
-     */
-    public function setPaydirekt($paydirekt)
-    {
-        $this->paydirekt = $paydirekt;
-    }
-
-    /**
-     * @return string
-     */
-    public function getPaydirekt()
-    {
-        return $this->paydirekt;
     }
 }

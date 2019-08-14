@@ -72,6 +72,6 @@ class Payone_Api_Enum_WalletType {
      *      
      *       If response status is REDIRECT, send customer to the redirecturl (Yapital).
      */
-    const PAYDIREKT = 'PDT';
+    const YAPITAL = 'YPL';
 
 }

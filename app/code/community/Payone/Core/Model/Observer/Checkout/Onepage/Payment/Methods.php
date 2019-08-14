@@ -49,17 +49,12 @@ class Payone_Core_Model_Observer_Checkout_Onepage_Payment_Methods
          * @var $quote Mage_Sales_Model_Quote
          */
         $quote = $observer->getEvent()->getQuote();
+
         if(!$quote->getCustomerIsGuest()) {
             try {
-                $oCustomer = $quote->getCustomer();
-                if($oCustomer) {
-                    $oMethod = $oCustomer->getPayoneLastPaymentMethod();
-                    if($oMethod) {
-                        $quote->getPayment()->setMethod($oMethod)->getMethodInstance();
-                    }
-                }
+                $quote->getPayment()->setMethod($quote->getCustomer()->getPayoneLastPaymentMethod())->getMethodInstance();
             } catch ( Exception $e ) {
-                //do nothing - getPayoneLastPaymentMethod method was just not accessible - no big deal
+                Mage::logException($e);
             }
         }
 

@@ -92,11 +92,6 @@ class Payone_Core_Model_Observer_Sales_Quote_Address
         return $actions;
     }
 
-    protected function _alreadyCheckedAndChangeWasDenied($sType) {
-        $blReturn = (bool)Mage::app()->getRequest()->getPost($sType.'_change_denied', false);
-        return $blReturn;
-    }
-    
     /**
      * checks if an addresscheck must be performed
      *
@@ -109,11 +104,11 @@ class Payone_Core_Model_Observer_Sales_Quote_Address
     protected function mustCheckAddress($addressType, Payone_Core_Model_Config_Protect_AddressCheck $config, Mage_Sales_Model_Quote $quote, $useForShipping)
     {
         // check if address is shipping-address an shipping-address has to be checked
-        if ($addressType === 'shipping' && !$this->_alreadyCheckedAndChangeWasDenied($addressType) && $config->mustCheckShipping()) {
+        if ($addressType === 'shipping' and $config->mustCheckShipping()) {
             return true;
         }
         // check if address is billing-address
-        if ($addressType === 'billing' && !$this->_alreadyCheckedAndChangeWasDenied($addressType)) {
+        if ($addressType === 'billing') {
             // check if billing-address has to be checked
             if ($config->mustCheckBilling()) {
                 return true;

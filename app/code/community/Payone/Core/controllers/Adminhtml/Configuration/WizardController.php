@@ -20,7 +20,6 @@
  * @license         <http://www.gnu.org/licenses/> GNU General Public License (GPL 3)
  * @link            http://www.noovias.com
  */
-require_once 'Payone/Core/controllers/Adminhtml/Payonecore/System/Config/PaymentController.php';
 
 /**
  *
@@ -31,33 +30,13 @@ require_once 'Payone/Core/controllers/Adminhtml/Payonecore/System/Config/Payment
  * @license         <http://www.gnu.org/licenses/> GNU General Public License (GPL 3)
  * @link            http://www.noovias.com
  */
-class Payone_Core_Adminhtml_Payonecore_Configuration_Wizard_Page_PaymentController
-    extends Payone_Core_Adminhtml_Payonecore_System_Config_PaymentController
+class Payone_Core_Adminhtml_Configuration_WizardController
+    extends Payone_Core_Controller_Adminhtml_Abstract
 {
-    /**
-     *
-     */
     public function indexAction()
     {
-        $this->initConfig('payment');
-
-        parent::indexAction();
+        $this->loadLayout();
+        $this->renderLayout();
     }
 
-    /**
-     * @param $actionName
-     * @return Varien_Object
-     */
-    protected function initConfig($actionName)
-    {
-        return $this->helperWizard()->initConfig($actionName, $this->getRequest());
-    }
-
-    /**
-     * @return Payone_Core_Helper_Wizard
-     */
-    public function helperWizard()
-    {
-        return Mage::helper('payone_core/wizard');
-    }
 }

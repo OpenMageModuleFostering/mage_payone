@@ -48,7 +48,7 @@ class Payone_SessionStatus_Service_ProtocolRequest
         Payone_SessionStatus_Response_Interface $response = null
     )
     {
-        $this->getServiceApplyFilters()->apply($request->toArray());
+        $this->getServiceApplyFilters()->apply($request);
         $this->getServiceApplyFilters()->apply($response);
 
 
@@ -76,7 +76,7 @@ class Payone_SessionStatus_Service_ProtocolRequest
     public function protocolException(Exception $e, Payone_SessionStatus_Request_Interface $request = null)
     {
         if ($request !== null) {
-            $this->getServiceApplyFilters()->apply($request->toArray());
+            $this->getServiceApplyFilters()->apply($request);
         }
 
         foreach ($this->loggers as $key => $logger)

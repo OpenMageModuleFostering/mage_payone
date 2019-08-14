@@ -16,7 +16,7 @@
  * @package         Payone_Core_controllers
  * @subpackage
  * @copyright       Copyright (c) 2015 <kontakt@fatchip.de> - www.fatchip.com
- * @author          Robert Mï¿½ller <robert.mueller@fatchip.de>
+ * @author          Robert Müller <robert.mueller@fatchip.de>
  * @license         <http://www.gnu.org/licenses/> GNU General Public License (GPL 3)
  * @link            http://www.fatchip.de
  */
@@ -32,11 +32,9 @@ class Payone_Core_IframeController extends Payone_Core_Controller_Abstract {
         $this->loadLayout();
         $sPaymentId = $this->getPaymentType();
         switch ($sPaymentId) {
-        /*
             case 'payone_wallet':
                 $this->getLayout()->getBlock('head')->setTitle($this->__('Payment with Yapital'));
                 break;
-        */
             case 'payone_creditcard_iframe':
                 $this->getLayout()->getBlock('head')->setTitle($this->__('Payment with creditcard'));
                 break;
