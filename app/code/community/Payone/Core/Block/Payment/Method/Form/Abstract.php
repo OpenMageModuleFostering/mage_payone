@@ -135,10 +135,10 @@ class Payone_Core_Block_Payment_Method_Form_Abstract
      * Provide an array of credit card types for the template
      *
      * Each value is an array, with the keys:
-     * code - type code, e.g. 'V'
-     * name - name for display, e.g. "Visa"
+     * code - type code, e.g. 'V', PNC', 'BSV'
+     * name - name for display, e.g. "Visa", "Sofortueberweisung" "BillSafe'
      * fee - Formatted fee price for this type, empty if no price is configured.
-     * check_cvc - 1 or 0, depends on the used configuration only set for Creditcard
+     * check_cvc - 1 or 0, depends on the used configuration. only set for Creditcard
      * config_id - Id of the payment method configuration for this card type
      *
      * @api
@@ -155,6 +155,7 @@ class Payone_Core_Block_Payment_Method_Form_Abstract
 
             $systemTypes = $this->getSystemConfigMethodTypes();
 
+            /** @var $config Payone_Core_Model_Config_Payment_Method */
             foreach ($this->getPaymentConfigs() as $key => $config) {
                 $feeConfig = $config->getFeeConfigForQuote($quote);
 
@@ -173,7 +174,6 @@ class Payone_Core_Block_Payment_Method_Form_Abstract
                     continue;
                 }
 
-                /** @var $config Payone_Core_Model_Config_Payment_Method */
                 foreach ($configTypes as $keyType => $typeCode) {
                     $configTypeKey = $configId . '_' . $typeCode; // key to correctly identify this config and type
                     $return[$configTypeKey]['code'] = $typeCode;

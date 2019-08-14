@@ -40,6 +40,10 @@ class Payone_Core_Model_Config_Misc extends Payone_Core_Model_Config_AreaAbstrac
      * @var Payone_Core_Model_Config_Misc_ShippingCosts
      */
     protected $shippingCosts = null;
+
+    /** @var Payone_Core_Model_Config_Misc_Discount */
+    protected $discount = null;
+
     /**
      * @var Payone_Core_Model_Config_Misc_Creditmemo
      */
@@ -122,7 +126,7 @@ class Payone_Core_Model_Config_Misc extends Payone_Core_Model_Config_AreaAbstrac
     }
 
     /**
-     * @param \Payone_Core_Model_Config_Misc_TransactionstatusProcessing $transactionstatusProcessing
+     * @param Payone_Core_Model_Config_Misc_TransactionstatusProcessing $transactionstatusProcessing
      */
     public function setTransactionstatusProcessing($transactionstatusProcessing)
     {
@@ -130,7 +134,7 @@ class Payone_Core_Model_Config_Misc extends Payone_Core_Model_Config_AreaAbstrac
     }
 
     /**
-     * @return \Payone_Core_Model_Config_Misc_TransactionstatusProcessing
+     * @return Payone_Core_Model_Config_Misc_TransactionstatusProcessing
      */
     public function getTransactionstatusProcessing()
     {
@@ -138,7 +142,7 @@ class Payone_Core_Model_Config_Misc extends Payone_Core_Model_Config_AreaAbstrac
     }
 
     /**
-     * @param \Payone_Core_Model_Config_Misc_Creditmemo $creditmemo
+     * @param Payone_Core_Model_Config_Misc_Creditmemo $creditmemo
      */
     public function setCreditmemo($creditmemo)
     {
@@ -146,10 +150,26 @@ class Payone_Core_Model_Config_Misc extends Payone_Core_Model_Config_AreaAbstrac
     }
 
     /**
-     * @return \Payone_Core_Model_Config_Misc_Creditmemo
+     * @return Payone_Core_Model_Config_Misc_Creditmemo
      */
     public function getCreditmemo()
     {
         return $this->creditmemo;
+    }
+
+    /**
+     * @param Payone_Core_Model_Config_Misc_Discount $discount
+     */
+    public function setDiscount(Payone_Core_Model_Config_Misc_Discount $discount)
+    {
+        $this->discount = $discount;
+    }
+
+    /**
+     * @return Payone_Core_Model_Config_Misc_Discount
+     */
+    public function getDiscount()
+    {
+        return $this->discount;
     }
 }

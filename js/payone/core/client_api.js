@@ -3,6 +3,7 @@
  * @type {Object}
  */
 var PAYONE = {};
+PAYONE.Handler = {};
 PAYONE.Service = {};
 PAYONE.Validation = {};
 

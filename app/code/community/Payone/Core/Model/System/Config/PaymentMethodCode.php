@@ -38,7 +38,9 @@ class Payone_Core_Model_System_Config_PaymentMethodCode extends Payone_Core_Mode
     const CASHONDELIVERY = 'payone_cash_on_delivery';
     const CREDITCARD = 'payone_creditcard';
     const DEBITPAYMENT = 'payone_debit_payment';
+    const FINANCING = 'payone_financing';
     const INVOICE = 'payone_invoice';
+    const SAFEINVOICE = 'payone_safe_invoice';
     const ONLINEBANKTRANSFER = 'payone_online_bank_transfer';
     const WALLET = 'payone_wallet';
 
@@ -52,7 +54,9 @@ class Payone_Core_Model_System_Config_PaymentMethodCode extends Payone_Core_Mode
             self::CASHONDELIVERY => 'Cash on Delivery',
             self::CREDITCARD => 'Creditcard',
             self::DEBITPAYMENT => 'Debit Payment',
+            self::FINANCING => 'Financing',
             self::INVOICE => 'Invoice',
+            self::SAFEINVOICE => 'Safe Invoice',
             self::ONLINEBANKTRANSFER => 'Online Bank Transfer',
             self::WALLET => 'Wallet'
         );

@@ -55,6 +55,11 @@ class Payone_Core_Model_Service_TransactionStatus_Process extends Payone_Core_Mo
     protected $serviceOrderComment = null;
 
     /**
+     * @var Payone_Core_Model_Service_TransactionStatus_StoreClearingParameters
+     */
+    protected $serviceStoreClearingParams = null;
+
+    /**
      * @param Payone_Core_Model_Domain_Protocol_TransactionStatus $transactionStatus
      * @throws Payone_Core_Exception_OrderNotFound
      */
@@ -64,7 +69,15 @@ class Payone_Core_Model_Service_TransactionStatus_Process extends Payone_Core_Mo
         $order->loadByIncrementId($transactionStatus->getReference());
 
         if (!$order->hasData()) {
-            throw new Payone_Core_Exception_OrderNotFound();
+            throw new Payone_Core_Exception_OrderNotFound('Reference "'.$transactionStatus->getReference().'"."');
+        }
+
+        // Secondary validation: is Transaction Id correct?
+        $payment = $order->getPayment();
+        $lastTxId = $payment->getLastTransId();
+        if($lastTxId != $transactionStatus->getTxid())
+        {
+            return; // Don´t throw an exception, just abort processing.
         }
 
         $config = $this->helperConfig()->getConfigStore($order->getStoreId());
@@ -82,17 +95,22 @@ class Payone_Core_Model_Service_TransactionStatus_Process extends Payone_Core_Mo
         // Add Order Comment
         $this->getServiceOrderComment()->addByTransactionStatus($order, $transactionStatus);
 
+        // Store Clearing Parameters (needs to be done before the events get triggered)
+        $this->getServiceStoreClearingParams()->execute($transactionStatus, $order);
+
         // Save before Event is triggerd
         $resouce = $this->getFactory()->getModelResourceTransaction();
         $resouce->addObject($order);
         $resouce->addObject($transactionStatus);
         $resouce->save();
 
+
         // Trigger Event
         $params = array(
             self::EVENT_PARAMETER_TRANSACTIONSTATUS => $transactionStatus,
             self::EVENT_PARAMETER_TRANSACTION => $transaction,
             self::EVENT_PARAMETER_CONFIG => $config,
+            // @todo we should add order as param  cause observers may need it
         );
         $this->dispatchEvent(self::EVENT_NAME_PREFIX . self::EVENT_NAME_ALL, $params);
         $this->dispatchEvent(self::EVENT_NAME_PREFIX . $transactionStatus->getTxaction(), $params);
@@ -156,5 +174,22 @@ class Payone_Core_Model_Service_TransactionStatus_Process extends Payone_Core_Mo
     {
         return $this->serviceTransaction;
     }
+
+    /**
+     * @param Payone_Core_Model_Service_TransactionStatus_StoreClearingParameters $serviceStoreClearingParams
+     */
+    public function setServiceStoreClearingParams(Payone_Core_Model_Service_TransactionStatus_StoreClearingParameters $serviceStoreClearingParams)
+    {
+        $this->serviceStoreClearingParams = $serviceStoreClearingParams;
+    }
+
+    /**
+     * @return Payone_Core_Model_Service_TransactionStatus_StoreClearingParameters
+     */
+    public function getServiceStoreClearingParams()
+    {
+        return $this->serviceStoreClearingParams;
+    }
+
 
 }

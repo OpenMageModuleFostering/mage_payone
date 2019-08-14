@@ -37,4 +37,5 @@ class Payone_Enum_ClearingType
     const ONLINEBANKTRANSFER = 'sb';
     const CASHONDELIVERY = 'cod';
     const WALLET = 'wlt';
+    const FINANCING = 'fnc';
 }

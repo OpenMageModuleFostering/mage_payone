@@ -73,6 +73,23 @@ class Payone_Core_Model_Factory
     }
 
     /**
+     * @return Payone_Core_Helper_Score
+     */
+    public function helperScore()
+    {
+        return Mage::helper('payone_core/score');
+    }
+
+    /**
+     *
+     * @return Payone_Core_Helper_Registry
+     */
+    public function helperRegistry()
+    {
+        return Mage::helper('payone_core/registry');
+    }
+    
+    /**
      * @return Payone_Core_Helper_Url
      */
     public function helperUrl()
@@ -229,6 +246,34 @@ class Payone_Core_Model_Factory
     }
 
     /**
+     * @param Payone_Core_Model_Config_Payment_Method_Interface $config
+     * @return Payone_Core_Model_Mapper_ApiRequest_Management_ManageMandate
+     */
+    public function getMapperManagementRequestManageMandate(Payone_Core_Model_Config_Payment_Method_Interface $config)
+    {
+        /** @var Payone_Core_Model_Mapper_ApiRequest_Management_ManageMandate $mapper */
+        $mapper = Mage::getModel('payone_core/mapper_apiRequest_management_manageMandate');
+        $mapper->setPaymentConfig($config);
+        $mapper->setFactory($this);
+
+        return $mapper;
+    }
+
+    /**
+     * @param Payone_Core_Model_Config_Payment_Method_Interface $config
+     * @return Payone_Core_Model_Mapper_ApiRequest_Management_GetFile
+     */
+    public function getMapperManagementRequestGetFile(Payone_Core_Model_Config_Payment_Method_Interface $config)
+    {
+        /** @var Payone_Core_Model_Mapper_ApiRequest_Management_GetFile $mapper */
+        $mapper = Mage::getModel('payone_core/mapper_apiRequest_management_getFile');
+        $mapper->setConfig($config);
+        $mapper->setFactory($this);
+
+        return $mapper;
+    }
+
+    /**
      * @param Payone_Core_Model_Config_Protect_Creditrating $config
      * @return Payone_Core_Model_Mapper_ApiRequest_Verification_Creditrating
      */
@@ -337,6 +382,41 @@ class Payone_Core_Model_Factory
         $service->setMapper($mapper);
         $service->setHandler($handler);
         $service->setServiceApiGetInvoice($this->getServiceApiManagementGetInvoice());
+
+        return $service;
+    }
+
+    /**
+     * @param $paymentMethodConfigId
+     * @param $storeId
+     * @return Payone_Core_Model_Service_Management_ManageMandate
+     */
+    public function getServiceManagementManageMandate($paymentMethodConfigId, $storeId)
+    {
+        $config = $this->helperConfig()->getConfigPaymentMethodById($paymentMethodConfigId, $storeId);
+        $mapper = $this->getMapperManagementRequestManageMandate($config);
+        /** @var Payone_Core_Model_Service_Management_ManageMandate $service */
+        $service = Mage::getModel('payone_core/service_management_manageMandate');
+        $service->setMapper($mapper);
+        $service->setServiceApiManageMandate($this->getServiceApiManagementManageMandate());
+
+        return $service;
+    }
+
+    /**
+     * @param $paymentMethodConfigId
+     * @param $storeId
+     * @return Payone_Core_Model_Service_Management_GetFile
+     */
+    public function getServiceManagementGetFile($paymentMethodConfigId, $storeId)
+    {
+        $config = $this->helperConfig()->getConfigPaymentMethodById($paymentMethodConfigId, $storeId);
+        $mapper = $this->getMapperManagementRequestGetFile($config);
+
+        /** @var Payone_Core_Model_Service_Management_GetFile $service */
+        $service = Mage::getModel('payone_core/service_management_getFile');
+        $service->setMapper($mapper);
+        $service->setServiceApiGetFile($this->getServiceApiManagementGetFile());
 
         return $service;
     }
@@ -563,6 +643,24 @@ class Payone_Core_Model_Factory
     }
 
     /**
+     * @return Payone_Api_Request_ManageMandate
+     */
+    public function getRequestManagementManageMandate()
+    {
+        $request = new Payone_Api_Request_ManageMandate();
+        return $request;
+    }
+
+    /**
+     * @return Payone_Api_Request_GetFile
+     */
+    public function getRequestManagementGetFile()
+    {
+        $request = new Payone_Api_Request_GetFile();
+        return $request;
+    }
+
+    /**
      * @return Payone_Api_Request_AddressCheck
      */
     public function getRequestVerificationConsumerScore()
@@ -674,6 +772,32 @@ class Payone_Core_Model_Factory
     }
 
     /**
+     * @return Payone_Api_Service_Management_ManageMandate
+     */
+    public function getServiceApiManagementManageMandate()
+    {
+        $builder = $this->getBuilder();
+        $service = $builder->buildServiceManagementManageMandate();
+
+        $this->afterBuildServiceApi($service);
+
+        return $service;
+    }
+
+    /**
+     * @return Payone_Api_Service_Management_GetFile
+     */
+    public function getServiceApiManagementGetFile()
+    {
+        $builder = $this->getBuilder();
+        $service = $builder->buildServiceManagementGetFile();
+
+        $this->afterBuildServiceApi($service);
+
+        return $service;
+    }
+
+    /**
      * @return Payone_Api_Service_Verification_ConsumerScore
      */
     public function getServiceApiVerificationConsumerScore()
@@ -774,6 +898,8 @@ class Payone_Core_Model_Factory
         $service->setServiceTransaction($this->getServiceTransactionUpdate());
         $service->setServiceOrderStatus($this->getServiceSalesOrderStatus());
         $service->setServiceOrderComment($this->getServiceSalesOrderComment());
+        $service->setServiceStoreClearingParams($this->getServiceTransactionStatusStoreClearingParameters());
+
 
         return $service;
     }
@@ -787,6 +913,19 @@ class Payone_Core_Model_Factory
         $service = Mage::getModel('payone_core/service_transactionStatus_forward');
         $service->setFactory($this);
         $service->setHttpClient($this->getModelVarienHttpClient());
+        return $service;
+    }
+
+
+    /**
+     * @return Payone_Core_Model_Service_TransactionStatus_StoreClearingParameters
+     */
+    public function getServiceTransactionStatusStoreClearingParameters()
+    {
+        /** @var $service Payone_Core_Model_Service_TransactionStatus_StoreClearingParameters */
+        $service = Mage::getModel('payone_core/service_transactionStatus_storeClearingParameters');
+        $service->setFactory($this);
+
         return $service;
     }
 
@@ -854,6 +993,20 @@ class Payone_Core_Model_Factory
         $service->setFactory($this);
         return $service;
     }
+    
+    /**
+     * @return Payone_Core_Model_Service_Sales_OrderConfirmation
+     */
+    public function getServiceSalesOrderConfirmation()
+    {
+        /**
+         * @var $service Payone_Core_Model_Service_Sales_OrderConfirmation
+         */
+        $service = Mage::getModel('payone_core/service_sales_orderConfirmation');
+        $service->setFactory($this);
+        return $service;
+    }
+    
 
     /**
      * @return Payone_Settings_Service_XmlGenerate
@@ -864,6 +1017,19 @@ class Payone_Core_Model_Factory
         return $service;
     }
 
+
+    /**
+     * @return Payone_Core_Model_Service_Config_PaymentMethod_Create
+     */
+    public function getServiceConfigPaymentMethodCreate()
+    {
+        /** @var $service Payone_Core_Model_Service_Config_PaymentMethod_Create */
+        $service = Mage::getModel('payone_core/service_config_paymentMethod_create');
+        $service->setFactory($this);
+
+        return $service;
+    }
+
     /**
      * @return Payone_Core_Model_Service_Config_XmlGenerate
      */
@@ -871,6 +1037,18 @@ class Payone_Core_Model_Factory
     {
         /** @var $service Payone_Core_Model_Service_Config_XmlGenerate */
         $service = Mage::getModel('payone_core/service_config_xmlGenerate');
+        $service->setFactory($this);
+
+        return $service;
+    }
+
+    /**
+     * @return Payone_Core_Model_Service_Config_ProtectCheck
+     */
+    public function getServiceConfigProtectCheck()
+    {
+        /** @var $service Payone_Core_Model_Service_Config_ProtectCheck */
+        $service = Mage::getModel('payone_core/service_config_protectCheck');
         $service->setFactory($this);
 
         return $service;
@@ -991,6 +1169,17 @@ class Payone_Core_Model_Factory
     }
 
     /**
+     * @return Mage_Customer_Model_Entity_Customer
+     */
+    public function getSingletonCustomerResource()
+    {
+        /** @var Mage_Customer_Model_Entity_Customer $resource */
+        $resource = Mage::getResourceSingleton('customer/customer');
+
+        return $resource;
+    }
+
+    /**
      * @return Mage_Customer_Model_Address
      */
     public function getModelCustomerAddress()
@@ -1094,9 +1283,22 @@ class Payone_Core_Model_Factory
 
             // Set Magento logger configuration:
             $this->config->setValue('api/default/protocol/loggers', $this->getConfigApiLogger());
-            $this->config->setValue('transaction_status/default/protocol/loggers/', $this->getConfigTransactionStatusLogger());
+            $this->config->setValue('transaction_status/default/protocol/loggers', $this->getConfigTransactionStatusLogger());
+            $this->config->setValue('transaction_status/validator/proxy/enabled', $this->getConfigProxyMode());
+            if($this->helper()->isCompilerEnabled())
+            {
+                $this->config->setValue('api/default/mapper/currency/currency_properties', $this->getLibCurrencyProperties());
+            }
         }
         return $this->config;
+    }
+
+    /**
+     * @return string
+     */
+    protected function getLibCurrencyProperties()
+    {
+        return Mage::getBaseDir('lib') . DIRECTORY_SEPARATOR . 'Payone' . DIRECTORY_SEPARATOR . 'Api' . DIRECTORY_SEPARATOR . 'Mapper' . DIRECTORY_SEPARATOR . 'currency.properties';
     }
 
 
@@ -1129,6 +1331,16 @@ class Payone_Core_Model_Factory
         $config = array('Payone_Protocol_Logger_Log4php' => $options);
 
         return $config;
+    }
+
+    /**
+     * @return int
+     */
+    protected function getConfigProxyMode()
+    {
+        $configMisc = $this->helperConfig()->getConfigMisc();
+        $transactionStatusProcessing = $configMisc->getTransactionstatusProcessing();
+        return $transactionStatusProcessing->getProxyMode();
     }
 
     /**
@@ -1277,6 +1489,23 @@ class Payone_Core_Model_Factory
     }
 
     /**
+     * @return Payone_Core_Model_System_Config_FinancingType
+     */
+    public function getModelSystemConfigFinancingType()
+    {
+        return Mage::getSingleton('payone_core/system_config_financingType');
+    }
+
+
+    /**
+     * @return Payone_Core_Model_System_Config_SafeInvoiceType
+     */
+    public function getModelSystemConfigSafeInvoiceType()
+    {
+        return Mage::getSingleton('payone_core/system_config_safeInvoiceType');
+    }
+
+    /**
      * @return Payone_Core_Model_System_Config_AddressCheckType
      */
     public function getModelSystemConfigAddressCheckType()
@@ -1325,6 +1554,14 @@ class Payone_Core_Model_Factory
     }
 
     /**
+     * @return Payone_Core_Model_System_Config_KlarnaCountry
+     */
+    public function getModelSystemConfigKlarnaCountry()
+    {
+        return Mage::getSingleton('payone_core/system_config_klarnaCountry');
+    }
+
+    /**
      * @return Mage_Core_Model_Resource_Transaction
      */
     public function getModelResourceTransaction()
@@ -1354,5 +1591,15 @@ class Payone_Core_Model_Factory
     public function getModelVarienHttpClient()
     {
         return new Varien_Http_Client();
+    }
+
+    /**
+     * @return Mage_Core_Model_Config_Data
+     */
+    public function getModelCoreConfigData()
+    {
+        /** @var $configData Mage_Core_Model_Config_Data */
+        $configData = Mage::getModel('core/config_data');
+        return $configData;
     }
 }

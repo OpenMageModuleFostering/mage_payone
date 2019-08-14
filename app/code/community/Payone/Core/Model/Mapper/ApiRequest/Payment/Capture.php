@@ -33,8 +33,11 @@
 class Payone_Core_Model_Mapper_ApiRequest_Payment_Capture
     extends Payone_Core_Model_Mapper_ApiRequest_Payment_Abstract
 {
+    const EVENT_TYPE = 'capture';
+
     /** @var Mage_Sales_Model_Order_Invoice */
     protected $invoice = null;
+
 
     /**
      * @return Payone_Api_Request_Capture
@@ -62,10 +65,15 @@ class Payone_Core_Model_Mapper_ApiRequest_Payment_Capture
         $request->setBusiness($business);
 
         /** Set Invoiceing-Parameter only if enabled in Config */
-        if ($this->getConfigPayment()->isInvoiceTransmitEnabled()) {
+        if ($this->mustTransmitInvoiceData()) {
             $invoicing = $this->mapInvoicingParameters();
-            $request->setInvoicing($invoicing);
+            if (!empty($invoicing)) {
+                $request->setInvoicing($invoicing);
+            }
         }
+
+        $this->dispatchEvent($this->getEventName(), array('request' => $request, 'invoice' => $this->getInvoice()));
+        $this->dispatchEvent($this->getEventPrefix() . '_all', array('request' => $request));
 
         return $request;
     }
@@ -93,10 +101,37 @@ class Payone_Core_Model_Mapper_ApiRequest_Payment_Capture
     protected function mapBusinessParameters()
     {
         $business = new Payone_Api_Request_Parameter_Capture_Business();
-        $business->setSettleaccount('auto');
         $business->setBookingDate('');
         $business->setDocumentDate('');
         $business->setDueTime('');
+
+        $paymentMethod = $this->getPaymentMethod();
+
+        // settleaccount possibilities depend on payment method:
+        if ($paymentMethod instanceof Payone_Core_Model_Payment_Method_AdvancePayment
+                or $paymentMethod instanceof Payone_Core_Model_Payment_Method_OnlineBankTransfer
+        ) {
+            $payment = $paymentMethod->getInfoInstance();
+            // Advancepayment and OnlineBankTransfer use NO/AUTO
+            if ($this->isInvoiceLast() || $this->helperRegistry()->isPaymentCancelRegistered($payment)) {
+                // Invoice completes the order
+                $business->setSettleaccount(Payone_Api_Enum_Settleaccount::AUTO);
+            }
+            else {
+                // partial payment
+                $business->setSettleaccount(Payone_Api_Enum_Settleaccount::NO);
+            }
+        }
+        elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_SafeInvoice
+                and $paymentMethod->getInfoInstance()->getPayoneSafeInvoiceType() == Payone_Api_Enum_FinancingType::BSV
+        ) {
+            // BillSAFE always settles account:
+            $business->setSettleaccount(Payone_Api_Enum_Settleaccount::YES);
+        }
+        else {
+            // all other can always use AUTO, regardless of complete or partial capture
+            $business->setSettleaccount(Payone_Api_Enum_Settleaccount::AUTO);
+        }
         return $business;
     }
 
@@ -108,42 +143,111 @@ class Payone_Core_Model_Mapper_ApiRequest_Payment_Capture
         $order = $this->getOrder();
         $invoice = $this->getInvoice();
 
-        $invoiceIncrementId = $invoice->getIncrementId();
-        if ($invoiceIncrementId === null) {
-            $invoiceIncrementId = $this->fetchNewIncrementId($invoice);
+        $invoicing = new Payone_Api_Request_Parameter_Capture_Invoicing_Transaction();
+        if (!empty($invoice) && $invoice->hasData()) {
+
+            $invoiceIncrementId = $invoice->getIncrementId();
+            if ($invoiceIncrementId === null) {
+                $invoiceIncrementId = $this->fetchNewIncrementId($invoice);
+            }
+
+            $appendix = $this->getInvoiceAppendix($invoice);
+
+            $invoicing->setInvoiceid($invoiceIncrementId);
+            $invoicing->setInvoiceappendix($appendix);
+
+            // Regular order items:
+            foreach ($invoice->getItemsCollection() as $itemData) {
+                /** @var $itemData Mage_Sales_Model_Order_Invoice_Item */
+                /** @var $orderItem Mage_Sales_Model_Order_Item */
+                $orderItem = $order->getItemById($itemData->getOrderItemId());
+
+                if ($orderItem->isDummy()) {
+                    continue; // Do not map dummy items.
+                }
+
+
+                $number = number_format($itemData->getQty(), 0, '.', '');
+                if ($number <= 0) {
+                    continue; // Do not map items with zero quantity
+                }
+                $params['id'] = $itemData->getSku();
+                $params['de'] = $itemData->getName();
+                $params['no'] = $number;
+                $params['pr'] = $itemData->getPriceInclTax();
+
+                if ($this->getPaymentMethod()->mustTransmitInvoicingItemTypes()) {
+                    $params['it'] = Payone_Api_Enum_InvoicingItemType::GOODS;
+                }
+
+                // We have to load the tax percentage from the order item
+                $params['va'] = number_format($orderItem->getTaxPercent(), 0, '.', '');
+
+                $item = new Payone_Api_Request_Parameter_Invoicing_Item();
+                $item->init($params);
+                $invoicing->addItem($item);
+            }
+
+            // Shipping / Fees:
+            if ($invoice->getShippingInclTax() > 0) {
+                $invoicing->addItem($this->mapShippingFeeAsItem());
+            }
+
+            // Discounts:
+            $discountAmount = $invoice->getDiscountAmount(); // Discount Amount is positive on invoice.
+            if ($discountAmount > 0) {
+                $invoicing->addItem($this->mapDiscountAsItem(-1 * $discountAmount));
+            }
         }
 
-        $appendix = $this->getInvoiceAppendix($invoice);
-
-        $invoicing = new Payone_Api_Request_Parameter_Invoicing_Transaction();
-        $invoicing->setInvoiceid($invoiceIncrementId);
-        $invoicing->setInvoiceappendix($appendix);
-
-        // Regular order items:
-        foreach ($invoice->getItemsCollection() as $itemData) {
-            /** @var $itemData Mage_Sales_Model_Order_Invoice_Item */
-            $params['id'] = $itemData->getSku();
-            $params['de'] = $itemData->getName();
-            $params['no'] = number_format($itemData->getQty(), 0, '.', '');
-            $params['pr'] = $itemData->getPriceInclTax();
-
-            // We have to load the tax percentage from the order item
-            /** @var $orderItem Mage_Sales_Model_Order_Item */
-            $orderItem = $order->getItemById($itemData->getOrderItemId());
-
-            $params['va'] = number_format($orderItem->getTaxPercent(), 0, '.', '');
-
-            $item = new Payone_Api_Request_Parameter_Invoicing_Item();
-            $item->init($params);
-            $invoicing->addItem($item);
+        // Capture mode:
+        $payment = $this->getPaymentMethod()->getInfoInstance();
+        if ($this->getPaymentMethod() instanceof Payone_Core_Model_Payment_Method_SafeInvoice
+                or $this->helperRegistry()->isPaymentCancelRegistered($payment)
+        ) {
+            $invoicing->setCapturemode($this->mapCaptureMode());
         }
 
-        // Shipping / Fees:
-        if ($invoice->getShippingInclTax() > 0) {
-            $invoicing->addItem($this->mapShippingFeeAsItem());
-        }
 
         return $invoicing;
+    }
+
+    /**
+     * Check if this invoice will be the last one (not the case if any orderItems can still be invoiced)
+     * @note Can´t use $invoice->isLast() here, as the items have already been processed, $orderItem->qty_invoiced is already incremented, which means isLast() returns wrong results.
+     *
+     * @return bool
+     */
+    protected function isInvoiceLast()
+    {
+        foreach ($this->getOrder()->getAllItems() as $orderItem) {
+            /** @var $orderItem Mage_Sales_Model_Order_Item */
+            if ($orderItem->isDummy()) {
+                continue;
+            }
+
+            if ($orderItem->canInvoice()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @return string
+     */
+    protected function mapCaptureMode()
+    {
+        $payment = $this->getPaymentMethod()->getInfoInstance();
+        if ($this->isInvoiceLast() || $this->helperRegistry()->isPaymentCancelRegistered($payment)) {
+            $captureMode = Payone_Api_Enum_CaptureMode::COMPLETED;
+        }
+        else {
+            $captureMode = Payone_Api_Enum_CaptureMode::NOTCOMPLETED;
+        }
+
+        return $captureMode;
     }
 
     /**
@@ -153,13 +257,7 @@ class Payone_Core_Model_Mapper_ApiRequest_Payment_Capture
     {
         if ($this->invoice === null) {
             // we need to check registry because Magento won't give the invoice instance to PaymentMethodInstance
-            $invoice = Mage::registry('current_invoice');
-            if (is_null($invoice)) {
-                // fallback to lastInvoice when invoice could not be fetched from Registry
-                $order = $this->getOrder();
-                $invoice = $order->getInvoiceCollection()->getLastItem();
-            }
-            $this->invoice = $invoice;
+            $this->invoice = $this->helperRegistry()->registry('current_invoice');
         }
         return $this->invoice;
     }
@@ -172,4 +270,11 @@ class Payone_Core_Model_Mapper_ApiRequest_Payment_Capture
         $this->invoice = $invoice;
     }
 
+    /**
+     * @return string
+     */
+    public function getEventType()
+    {
+        return self::EVENT_TYPE;
+    }
 }

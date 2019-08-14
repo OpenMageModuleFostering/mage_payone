@@ -32,6 +32,11 @@
  */
 class Payone_Core_Model_Service_Sales_OrderStatus extends Payone_Core_Model_Service_Abstract
 {
+    /**
+     * @param Mage_Sales_Model_Order $order
+     * @param Payone_Core_Model_Domain_Protocol_TransactionStatus $transactionStatus
+     * @return void
+     */
     public function updateByTransactionStatus(
         Mage_Sales_Model_Order $order, Payone_Core_Model_Domain_Protocol_TransactionStatus $transactionStatus
     )
@@ -40,7 +45,7 @@ class Payone_Core_Model_Service_Sales_OrderStatus extends Payone_Core_Model_Serv
         $order->setPayoneTransactionStatus($transactionStatus->getTxaction());
 
         // Update dunning status
-        if($transactionStatus->getReminderlevel()){
+        if ($transactionStatus->getReminderlevel()) {
             $order->setPayoneDunningStatus($transactionStatus->getReminderlevel());
         }
 
@@ -54,15 +59,31 @@ class Payone_Core_Model_Service_Sales_OrderStatus extends Payone_Core_Model_Serv
         $paymentMethod = $order->getPayment()->getMethodInstance();
         $type = $paymentMethod->getMethodType();
 
+        // Mapping
         $mapping = $statusMapping->getByType($type);
-
-        if (!array_key_exists($txAction, $mapping)) {
+        if (!is_array($mapping) or !array_key_exists($txAction, $mapping)) {
             return;
         }
 
-        $newOrderStatus = $mapping[$txAction];
+        // Check for valid Mapping
+        $mappingOrderState = $mapping[$txAction];
+        if (!is_array($mappingOrderState)
+                or !array_key_exists('status', $mappingOrderState)
+                or !array_key_exists('state', $mappingOrderState)
+        ) {
+            return;
+        }
 
-        $order->setStatus($newOrderStatus);
+        // Get State / Status and set to Order
+        $newOrderState = $mappingOrderState['state'];
+        $newOrderStatus = $mappingOrderState['status'];
+
+        if($newOrderState != '') {
+            $order->setState($newOrderState, $newOrderStatus);
+        }
+        else {
+            $order->setStatus($newOrderStatus);
+        }
     }
 
     /**

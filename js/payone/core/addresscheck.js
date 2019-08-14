@@ -29,35 +29,33 @@ Event.observe(window, 'load', function () {
  * Place a wrapper for the nextStep function on Magento´s Billing and Shipping objects, to allow additional output on addresscheck failure
  */
 function wrapAddressNextStepEvents() {
-    billing.nextStep = billing.nextStep.wrap(
-        function (origSaveMethod, transport) {
-            nextStepWithAddresscheckOutput(origSaveMethod, transport, 'billing');
-        }
-    );
-    shipping.nextStep = shipping.nextStep.wrap(
-        function (origSaveMethod, transport) {
-            nextStepWithAddresscheckOutput(origSaveMethod, transport, 'shipping');
-        }
-    );
+    billing.onSave = nextStepWithAddresscheckOutput.bindAsEventListener(billing.nextStep, 'billing', billing.nextStep);
+
+    if (typeof shipping != "undefined") // no shipping inputs for virtual orders.
+    {
+        shipping.onSave = nextStepWithAddresscheckOutput.bindAsEventListener(shipping.nextStep, 'shipping', shipping.nextStep);
+    }
 }
 
-function nextStepWithAddresscheckOutput(origSaveMethod, transport, address_type) {
+function nextStepWithAddresscheckOutput(transport, address_type, origSaveMethod) {
 
     if (transport && transport.responseText) {
-        response = JSON.parse(transport.responseText);
+        var response = transport.responseText.evalJSON();
         if (response.error) {
             if (response.message.payone_address_invalid) {
-                response.message = response.message.payone_address_invalid; //
-                transport.responseText = JSON.stringify(response); // Set new error message
+                response.message = response.message.payone_address_invalid;
+                    transport.responseText = '{"error":1,"message":"' + response.message + '"}';
+
             }
             if (response.message.payone_address_error) {
-                response.message = response.message.payone_address_error; //
-                transport.responseText = JSON.stringify(response); // Set new error message
+                response.message = response.message.payone_address_error;
+                    transport.responseText = '{"error":1,"message":"' + response.message + '"}';
             }
             if (response.message.payone_address_corrected) {
                 handleCorrectedAddress(response.message.payone_address_corrected, address_type);
                 response.message = response.message.payone_address_corrected.customermessage;
-                transport.responseText = JSON.stringify(response); // Set new error message
+
+                    transport.responseText = '{"error":1,"message":"' + response.message + '"}';
             }
 
         }

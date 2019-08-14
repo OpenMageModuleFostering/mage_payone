@@ -47,8 +47,6 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
     {
         $this->init($payment);
 
-        $configPayment = $this->getConfigPayment();
-
         $request = $this->getRequest();
 
         $this->beforeMapFromPayment($request);
@@ -68,8 +66,8 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
             $deliveryData = $this->mapDeliveryParameters();
             $request->setDeliveryData($deliveryData);
         }
-        // Only add Invoiceing Parameters if enabled
-        if ($configPayment->isInvoiceTransmitEnabled()) {
+        // Only add Invoiceing Parameters if enabled / required by payment method
+        if ($this->mustTransmitInvoiceData()) {
             $invoicing = $this->mapInvoicingParameters();
             $request->setInvoicing($invoicing);
         }
@@ -83,6 +81,8 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
 
         $this->afterMapFromPayment($request);
 
+        $this->dispatchEvent($this->getEventName(), array('request' => $request, 'order' => $this->getOrder()));
+        $this->dispatchEvent($this->getEventPrefix() . '_all', array('request' => $request));
         return $request;
     }
 
@@ -102,6 +102,7 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
 
     }
 
+
     /**
      * @param Payone_Api_Request_Authorization_Abstract $request
      */
@@ -110,7 +111,23 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
         $order = $this->getOrder();
         $paymentMethod = $this->getPaymentMethod();
 
-        $request->setRequest($this->configPayment->getRequestType());
+        $requestType = $this->configPayment->getRequestType();
+        // Always use PREAUTHORIZATION for Financing of type "Commerz Finanz"
+        if ($paymentMethod instanceof Payone_Core_Model_Payment_Method_Financing) {
+            $financingType = $paymentMethod->getInfoInstance()->getPayoneFinancingType();
+            if ($financingType == Payone_Api_Enum_FinancingType::CFR) {
+                $requestType = Payone_Api_Enum_RequestType::PREAUTHORIZATION;
+            }
+        }
+        // Always use PREAUTHORIZATION for Safe Invoice of type "Klarna"
+        if ($paymentMethod instanceof Payone_Core_Model_Payment_Method_SafeInvoice) {
+            $safeInvoiceType = $paymentMethod->getInfoInstance()->getPayoneSafeInvoiceType();
+            if ($safeInvoiceType == Payone_Api_Enum_FinancingType::KLV) {
+                $requestType = Payone_Api_Enum_RequestType::PREAUTHORIZATION;
+            }
+        }
+
+        $request->setRequest($requestType);
         $request->setAid($this->configPayment->getAid());
         $request->setClearingtype($this->mapClearingType($paymentMethod));
         $request->setCurrency($order->getOrderCurrencyCode());
@@ -141,6 +158,7 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
         $billingAddress = $order->getBillingAddress();
         $billingCountry = $billingAddress->getCountry();
         $customer = $order->getCustomer();
+        $paymentMethod = $this->getPaymentMethod();
 
         $personalData = new Payone_Api_Request_Parameter_Authorization_PersonalData();
         $personalData->setCustomerid($customer->getIncrementId());
@@ -164,14 +182,116 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
         $language = $helper->getDefaultLanguage();
         $personalData->setLanguage($language);
         $personalData->setVatid($order->getCustomerTaxvat());
-        $personalData->setIp($order->getRemoteIp());
+
+        $global = $this->getConfigGeneral()->getGlobal();
+        // Send Ip when enabled
+        if ($global->getTransmitIp()) {
+            $ip = $this->getCustomerIp();
+
+            $personalData->setIp($ip);
+        }
 
         // US and CA always need state and shipping_state paramters
         if ($billingCountry == 'US' or $billingCountry == 'CA') {
             $personalData->setState($billingAddress->getRegionCode());
         }
 
+        // Safe Invoice "Klarna" specific personal parameters mapping
+        if ($paymentMethod instanceof Payone_Core_Model_Payment_Method_SafeInvoice
+                and $paymentMethod->getInfoInstance()->getPayoneSafeInvoiceType() == Payone_Api_Enum_FinancingType::KLV
+        ) {
+            $personalData = $this->mapPersonalParametersSafeInvoiceKlarna($personalData);
+        }
+
         return $personalData;
+    }
+
+    /**
+     * @param Payone_Api_Request_Parameter_Authorization_PersonalData $personalData
+     * @return \Payone_Api_Request_Parameter_Authorization_PersonalData
+     */
+    protected function mapPersonalParametersSafeInvoiceKlarna($personalData)
+    {
+        $order = $this->getOrder();
+        $billingAddress = $order->getBillingAddress();
+        $billingCountry = $billingAddress->getCountry();
+        $info = $this->getPaymentMethod()->getInfoInstance();
+
+        // telephonenumber mandatory
+        $telephone = $info->getPayoneCustomerTelephone();
+        if (empty($telephone)) {
+            $telephone = $billingAddress->getTelephone();
+        }
+        $personalData->setTelephonenumber($telephone);
+
+        // birthday mandatory
+        $birthdayDate = $info->getPayoneCustomerDob();
+        if (empty($birthdayDate)) {
+            $birthdayDate = $order->getCustomerDob();
+        }
+        $personalData->setBirthday($this->formatBirthday($birthdayDate));
+
+        // IP Address is mandatory in case of "Klarna", even if not configured
+        if ($personalData->getIp() == null) {
+            $personalData->setIp($this->getCustomerIp());
+        }
+        if ($billingCountry == 'NL') {
+            // addressaddition mandatory
+            $addressAddition = $info->getPayoneBillingAddressaddition();
+            if (empty($addressAddition)) {
+                $addressAddition = $billingAddress->getStreet(2);
+            }
+            $personalData->setAddressaddition($addressAddition);
+        }
+
+        // Gender information and birthday Mandatory for Germany (DE), Netherlands (NL) and Austria (AT)
+        if ($billingCountry == 'DE' or $billingCountry == 'NL' or $billingCountry == 'AT') {
+            // gender
+            $genderValue = $info->getPayoneCustomerGender();
+            if (empty($genderValue)) {
+                $genderValue = $order->getCustomerGender();
+            }
+            $customerResource = $this->getFactory()->getSingletonCustomerResource();
+            /** @var Mage_Eav_Model_Entity_Attribute_Source_Table $genderSource */
+            $genderSource = $customerResource->getAttribute('gender')->getSource();
+            $genderLabel = $genderSource->getOptionText($genderValue);
+            if ($genderLabel == 'Female') {
+                $personalData->setGender(Payone_Api_Enum_Gender::FEMALE);
+            }
+            elseif ($genderLabel == 'Male') {
+                $personalData->setGender(Payone_Api_Enum_Gender::MALE);
+            }
+        }
+
+        // personalid mandatory for Denmark (DK), Finland (FI), Norway (NO) and Sweden (SE)
+        if ($billingCountry == 'DK' or $billingCountry == 'FI' or $billingCountry == 'NO'
+                or $billingCountry == 'SE'
+        ) {
+            $personalData->setPersonalid($info->getPayoneCustomerPersonalid());
+        }
+
+        return $personalData;
+    }
+
+    /**
+     * @return string
+     */
+    protected function getCustomerIp()
+    {
+        $global = $this->getConfigGeneral()->getGlobal();
+        $order = $this->getOrder();
+        if ($global->getProxyMode()) {
+            // Use X-Forwarded-For when in Proxy-Mode
+            $remoteIp = $order->getXForwardedFor();
+        }
+        else {
+            $remoteIp = $order->getRemoteIp();
+        }
+
+        // Multiple Ips could be included, we only send the last one.
+        $remoteIps = explode(',', $remoteIp);
+        $ip = array_pop($remoteIps);
+        return $ip;
     }
 
     /**
@@ -180,24 +300,48 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
     protected function mapDeliveryParameters()
     {
         $helper = $this->helper();
-        $shippingAddress = $this->getOrder()->getShippingAddress();
+        $paymentMethod = $this->getPaymentMethod();
+        $info = $paymentMethod->getInfoInstance();
+        $order = $this->getOrder();
+        if ($paymentMethod instanceof Payone_Core_Model_Payment_Method_SafeInvoice
+                and $info->getPayoneSafeInvoiceType() === Payone_Api_Enum_FinancingType::BSV
+        ) {
+            $address = $this->getOrder()->getBillingAddress();
+        } // Always use same address for BillSAFE
+        else {
+            $address = $this->getOrder()->getShippingAddress();
+        }
 
         $deliveryData = new Payone_Api_Request_Parameter_Authorization_DeliveryData();
 
-        $shippingCountry = $shippingAddress->getCountry();
+        $shippingCountry = $address->getCountry();
 
-        $deliveryData->setShippingFirstname($shippingAddress->getFirstname());
-        $deliveryData->setShippingLastname($shippingAddress->getLastname());
-        $deliveryData->setShippingCompany($shippingAddress->getCompany());
-        $street = $helper->normalizeStreet($shippingAddress->getStreet());
+        $deliveryData->setShippingFirstname($address->getFirstname());
+        $deliveryData->setShippingLastname($address->getLastname());
+        $deliveryData->setShippingCompany($address->getCompany());
+        $street = $helper->normalizeStreet($address->getStreet());
         $deliveryData->setShippingStreet($street);
-        $deliveryData->setShippingZip($shippingAddress->getPostcode());
-        $deliveryData->setShippingCity($shippingAddress->getCity());
+        $deliveryData->setShippingZip($address->getPostcode());
+        $deliveryData->setShippingCity($address->getCity());
         $deliveryData->setShippingCountry($shippingCountry);
 
         // US and CA always need shipping_state paramters
         if ($shippingCountry == 'US' or $shippingCountry == 'CA') {
-            $deliveryData->setShippingState($shippingAddress->getRegionCode());
+            $deliveryData->setShippingState($address->getRegionCode());
+        }
+
+        // Safe Invoice type "Klarna"
+        if ($paymentMethod instanceof Payone_Core_Model_Payment_Method_SafeInvoice
+                and $info->getPayoneSafeInvoiceType() == Payone_Api_Enum_FinancingType::KLV
+        ) {
+            // shipping addressaddition mandatory for Netherlands (NL)
+            if ($shippingCountry == 'NL') {
+                $shippingAddressAddition = $info->getPayoneShippingAddressaddition();
+                if (empty($shippingAddressAddition)) {
+                    $shippingAddressAddition = $address->getStreet(2);
+                }
+                $deliveryData->setShippingAddressaddition($shippingAddressAddition);
+            }
         }
 
         return $deliveryData;
@@ -218,11 +362,25 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
         // Order items:
         foreach ($order->getItemsCollection() as $key => $itemData) {
             /** @var $itemData Mage_Sales_Model_Order_Item */
+            if ($itemData->isDummy()) {
+                continue; // Do not map dummy items
+            }
+
+            $number = $itemData->getQtyToInvoice();
+            if ($number <= 0) {
+                continue; // Do not map items with zero quanity
+            }
+
             $params['id'] = $itemData->getSku();
             $params['pr'] = $itemData->getPriceInclTax();
-            $params['no'] = $itemData->getQtyToInvoice();
+            $params['no'] = $number;
             $params['de'] = $itemData->getName();
             $params['va'] = number_format($itemData->getTaxPercent(), 0, '.', '');
+
+            if ($this->getPaymentMethod()->mustTransmitInvoicingItemTypes()) {
+                $params['it'] = Payone_Api_Enum_InvoicingItemType::GOODS;
+            }
+
 
             $item = new Payone_Api_Request_Parameter_Invoicing_Item();
             $item->init($params);
@@ -234,6 +392,11 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
             $invoicing->addItem($this->mapShippingFeeAsItem());
         }
 
+        // Discounts:
+        $discountAmount = $order->getDiscountAmount(); // Discount Amount is negative on order.
+        if ($discountAmount > 0 || $discountAmount < 0) {
+            $invoicing->addItem($this->mapDiscountAsItem($discountAmount));
+        }
         return $invoicing;
     }
 
@@ -272,16 +435,55 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
             $isRedirect = true;
         }
         elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_OnlineBankTransfer) {
-            $country = $this->getOrder()->getBillingAddress()->getCountry();
+            $payoneOnlinebanktransferType = $info->getPayoneOnlinebanktransferType();
+            $iban = $info->getPayoneSepaIban();
+            $bic = $info->getPayoneSepaBic();
 
             $payment = new Payone_Api_Request_Parameter_Authorization_PaymentMethod_OnlineBankTransfer();
-            $payment->setBankcountry($country);
-            $payment->setBankaccount($info->getPayoneAccountNumber());
-            $payment->setBankcode($info->getPayoneBankCode());
-            $payment->setBankgrouptype($info->getPayoneBankGroup());
-            $payment->setOnlinebanktransfertype($info->getPayoneOnlinebanktransferType());
+            $payment->setOnlinebanktransfertype($payoneOnlinebanktransferType);
+
+            switch ($payoneOnlinebanktransferType) {
+                case Payone_Api_Enum_OnlinebanktransferType::INSTANT_MONEY_TRANSFER:
+                case Payone_Api_Enum_OnlinebanktransferType::GIROPAY:
+                    $payment->setBankcountry($info->getPayoneSepaBankCountry());
+                    if (!empty($iban) and !empty($bic)) {
+                        $payment->setIban(strtoupper($iban));
+                        $payment->setBic(strtoupper($bic)); // ensure bic and iban are sent uppercase
+                    }
+                    else {
+                        $payment->setBankaccount($info->getPayoneAccountNumber());
+                        $payment->setBankcode($info->getPayoneBankCode());
+                    }
+                    break;
+                case Payone_Api_Enum_OnlinebanktransferType::IDEAL:
+                case Payone_Api_Enum_OnlinebanktransferType::EPS_ONLINE_BANK_TRANSFER:
+                    $payment->setBankgrouptype($info->getPayoneBankGroup());
+                    break;
+                case Payone_Api_Enum_OnlinebanktransferType::POSTFINANCE_EFINANCE:
+                    break;
+                case Payone_Api_Enum_OnlinebanktransferType::POSTFINANCE_CARD:
+                    break;
+            }
 
             $isRedirect = true;
+        }
+        elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_Financing) {
+
+            $payment = new Payone_Api_Request_Parameter_Authorization_PaymentMethod_Financing();
+            $payment->setFinancingtype($info->getPayoneFinancingType());
+
+            $isRedirect = true;
+        }
+
+        elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_SafeInvoice) {
+
+            $payment = new Payone_Api_Request_Parameter_Authorization_PaymentMethod_Financing();
+            $payment->setFinancingtype($info->getPayoneSafeInvoiceType());
+
+            if ($info->getPayoneSafeInvoiceType() == Payone_Api_Enum_FinancingType::BSV) {
+                // BillSAFE is a redirect payment method, Klarna not
+                $isRedirect = true;
+            }
         }
         elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_Wallet) {
             $payment = new Payone_Api_Request_Parameter_Authorization_PaymentMethod_Wallet();
@@ -291,13 +493,30 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
             $isRedirect = true;
         }
         elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_DebitPayment) {
-            $country = $this->getOrder()->getBillingAddress()->getCountry();
-
             $payment = new Payone_Api_Request_Parameter_Authorization_PaymentMethod_DebitPayment();
-            $payment->setBankcountry($country);
-            $payment->setBankaccount($info->getPayoneAccountNumber());
+            $payment->setBankcountry($info->getPayoneSepaBankCountry());
+            $iban = $info->getPayoneSepaIban();
+            $bic = $info->getPayoneSepaBic();
+            if (!empty($iban) and !empty($bic)) {
+                $payment->setIban(strtoupper($iban));
+                $payment->setBic(strtoupper($bic)); // ensure bic and iban are sent uppercase
+            }
+            else {
+                $payment->setBankaccount($info->getPayoneAccountNumber());
+                $payment->setBankcode($info->getPayoneBankCode());
+            }
             $payment->setBankaccountholder($info->getPayoneAccountOwner());
-            $payment->setBankcode($info->getPayoneBankCode());
+            // for frontend orders set mandate identification if data provided in checkout session:
+            if (!$this->getIsAdmin()) {
+                $checkoutSession = $this->getFactory()->getSingletonCheckoutSession();
+                $mandateStatus = $checkoutSession->getPayoneSepaMandateStatus();
+                $mandateIdentification = $checkoutSession->getPayoneSepaMandateIdentification();
+                if ($mandateStatus == Payone_Core_Model_Service_Management_ManageMandate::STATUS_PENDING
+                        and !empty($mandateIdentification)
+                ) {
+                    $payment->setMandateIdentification($mandateIdentification);
+                }
+            }
         }
 
         if ($isRedirect === true) {
@@ -342,6 +561,12 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
         elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_DebitPayment) {
             $clearingType = Payone_Enum_ClearingType::DEBITPAYMENT;
         }
+        elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_Financing) {
+            $clearingType = Payone_Enum_ClearingType::FINANCING;
+        }
+        elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_SafeInvoice) {
+            $clearingType = Payone_Enum_ClearingType::FINANCING;
+        }
 
         return $clearingType;
     }
@@ -365,8 +590,7 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
      */
     protected function getNarrativeText($type)
     {
-        $storeId = $this->getPaymentMethod()->getStore();
-        $general = $this->helperConfig()->getConfigGeneral($storeId);
+        $general = $this->getConfigGeneral();
         $parameterNarrativeText = $general->getParameterNarrativeText();
 
         $narrativeText = '';

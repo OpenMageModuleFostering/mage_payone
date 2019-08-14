@@ -50,9 +50,9 @@ class Payone_Core_Model_Service_Config_XmlGenerate
         /** @var $rootConfig Payone_Settings_Data_ConfigFile_Root */
         $rootConfig = $this->getSettingsClass('root');
 
-        $stores = Mage::app()->getStores();
+        $stores = $this->getStores();
         foreach ($stores as $store) {
-            /** @var $store Mage_Core_Model_Store  */
+            /** @var $store Mage_Core_Model_Store */
             /** @var $config Payone_Core_Model_Config */
             $this->store = $store;
             $config = $serviceConfig->execute($store->getStoreId());
@@ -63,6 +63,15 @@ class Payone_Core_Model_Service_Config_XmlGenerate
         $xml = $service->generate($rootConfig);
 
         return $xml;
+    }
+
+    /**
+     * Get all Magento stores
+     * @return Mage_Core_Model_Store[]
+     */
+    protected function getStores()
+    {
+        return Mage::app()->getStores();
     }
 
     /**
@@ -151,7 +160,7 @@ class Payone_Core_Model_Service_Config_XmlGenerate
         $statusMapping = $general->getStatusMapping();
         $paymentCreditcard = $general->getPaymentCreditcard();
 
-        /** @var $globalConfig Payone_Settings_Data_ConfigFile_Shop_Global  */
+        /** @var $globalConfig Payone_Settings_Data_ConfigFile_Shop_Global */
         $globalConfig = $this->generateSettingsBySection('shop_global', $global);
         $statusMappingConfig = new Payone_Settings_Data_ConfigFile_Global_StatusMapping();
         foreach ($statusMapping->toArray() as $keyClearingType => $mapping) {
@@ -162,7 +171,13 @@ class Payone_Core_Model_Service_Config_XmlGenerate
                 foreach ($mapping as $key => $value) {
                     $singleMap = array();
                     $singleMap['from'] = $key;
-                    $singleMap['to'] = $value;
+
+                    $mapTo = $value;
+                    if (is_array($value)) {
+                        $mapTo = implode('|', $value);
+                    }
+                    $singleMap['to'] = $mapTo;
+
                     array_push($data, $singleMap);
                 }
                 $statusMappingConfig->addStatusMapping($keyClearingType, $data);
@@ -223,6 +238,32 @@ class Payone_Core_Model_Service_Config_XmlGenerate
                 $paymentMethodConfig->setTypes($types);
 
             }
+
+            if ($paymentMethodConfig instanceof Payone_Settings_Data_ConfigFile_PaymentMethod_Financing) {
+                /** @var Payone_Settings_Data_ConfigFile_PaymentMethod_Financing $paymentMethodConfig */
+                $klarnaConfigs = $paymentMethod->getKlarnaConfig();
+                $klarnaConfigArray = array();
+                if (is_array($klarnaConfigs)) {
+                    foreach ($klarnaConfigs as $klarnaConfig) {
+                        $attributeCountry = '';
+                        if (is_array($klarnaConfig)) {
+                            if (array_key_exists('countries', $klarnaConfig)) {
+                                $attributeCountry = implode(',', $klarnaConfig['countries']);
+                            }
+                        }
+                        $attributeArray = array(
+                            'countries' => $attributeCountry
+                        );
+                        $configArray = array(
+                            'value' => array_key_exists('klarna_store_id', $klarnaConfig) ? $klarnaConfig['klarna_store_id'] : '',
+                            'attribute' => $attributeArray
+                        );
+                        array_push($klarnaConfigArray, $configArray);
+                    }
+                }
+                $paymentMethodConfig->setKlarnaConfig($klarnaConfigArray);
+            }
+
             $feeConfigs = $paymentMethod->getFeeConfig();
             $feeConfigArray = array();
             if (is_array($feeConfigs)) {
@@ -345,6 +386,9 @@ class Payone_Core_Model_Service_Config_XmlGenerate
      */
     protected function getPaymentMethodClass($key)
     {
+        if ($key === 'safe_invoice') {
+            $key = 'financing';
+        } // safe_invoice is a sub-paymentmethod of financing in SDK.
         $key = uc_words($key, '');
         $classname = self::PAYMENT_METHOD_CLASS_PREFIX . $key;
         $classInstance = new $classname();

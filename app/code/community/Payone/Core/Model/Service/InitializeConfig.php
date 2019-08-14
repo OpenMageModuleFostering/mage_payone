@@ -59,16 +59,16 @@ class Payone_Core_Model_Service_InitializeConfig
     {
         $this->setStoreId($storeId);
 
-        // @todo registry handling should be moved to helper
+        $helperRegistry = $this->helperRegistry();
         $registryKey = $this->getConfigRegistryKey($storeId);
-        $config = Mage::registry($registryKey);
+        $config = $helperRegistry->registry($registryKey);
         if ($config instanceof Payone_Core_Model_Config_Interface) {
             return $config;
         }
 
         $config = $this->loadFromCache();
         if ($config instanceof Payone_Core_Model_Config_Interface) {
-            Mage::register($registryKey, $config);
+            $helperRegistry->register($registryKey, $config);
             return $config;
         }
 
@@ -173,62 +173,20 @@ class Payone_Core_Model_Service_InitializeConfig
         $payment = $this->getConfigModel(self::CONFIG_SECTION_PAYMENT);
 
         /** @var $methodConfigCollection Payone_Core_Model_Domain_Resource_Config_PaymentMethod_Collection */
-        $methodConfigCollection = Mage::getModel('payone_core/domain_config_paymentMethod')->getCollection();
-        $methodConfigCollection->getCollectionByStoreId($this->getStoreId());
+        $methodConfigCollection = $this->getFactory()->getModelDomainConfigPaymentMethod()->getCollection();
+        $methodConfigCollection->getCollectionByStoreId($this->getStoreId(), true);
         $methodConfigCollection->addSortOrder();
 
         foreach ($methodConfigCollection as $methodConfig) {
-            /**
-             * @var $methodConfig Payone_Core_Model_Domain_Config_PaymentMethod
-             */
-
-            $configData = $methodConfig->getData();
-
-            /**
-             * @var $configMethod Payone_Core_Model_Config_Payment_Method_Interface
-             */
-            $configMethod = $this->getConfigModel('payment_method');
-
-            $configMethod->init($configData);
-
-            // Use Global Config if use_global is set
-            if ($configMethod->getUseGlobal()) {
-                $configMethod->init($defaultConfig);
-            }
-            else {
-                // Check globals also if they are not to use
-                foreach ($defaultConfig as $key => $value) {
-                    if ($configData[$key] == '') {
-                        $configData[$key] = $value;
-                    }
-                }
-                $configMethod->init($configData);
-            }
-
-            // init Allowed Countries
-            if (array_key_exists('allowspecific', $configData) and $methodConfig->getAllowspecific()) {
-                $allowedCountries = $configMethod->getSpecificcountry();
-            }
-            else {
-                $generalAllowedCountries = $this->getStoreConfig('general/country/allow');
-                $allowedCountries = explode(',', $generalAllowedCountries);
-            }
-            $configMethod->setAllowedCountries($allowedCountries);
-
-            $parentDefaultId = $methodConfig->getParentDefaultId();
-            $parentWebsitesId = $methodConfig->getParentWebsitesId();
-            if (!empty($parentDefaultId) && empty($parentWebsitesId)) {
-                $configMethod->setParent($parentDefaultId);
-            }
-            elseif (!empty($parentWebsitesId)) {
-                $configMethod->setParent($parentWebsitesId);
-            }
+            /** @var $methodConfig Payone_Core_Model_Domain_Config_PaymentMethod */
+            $configMethod = $methodConfig->toConfigPayment($this->getStoreId(), $defaultConfig);
 
             $payment->addMethod($configMethod);
         }
 
         return $payment;
     }
+
 
     /**
      *
@@ -253,6 +211,10 @@ class Payone_Core_Model_Service_InitializeConfig
         return Mage::getModel($className);
     }
 
+    /**
+     * @param int|null $storeId
+     * @return string
+     */
     public function getConfigRegistryKey($storeId = null)
     {
         if ($storeId === null) {
@@ -265,6 +227,10 @@ class Payone_Core_Model_Service_InitializeConfig
         return $cacheId;
     }
 
+    /**
+     * @param int|null $storeId
+     * @return string
+     */
     public function getConfigCacheId($storeId = null)
     {
         if ($storeId === null) {

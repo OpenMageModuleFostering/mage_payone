@@ -22,34 +22,18 @@
  */
 ?>
 <script type="text/javascript">
-    var payone = new PAYONE.Service.CreditCardCheck('', true);
+    //<![CDATA[
+    payone = new PAYONE.Service.CreditCardCheck(
+            new PAYONE.Handler.CreditCardCheck.Admin()
+    );
 
     Event.observe(window, 'load', function () {
-        wrapOrderSubmitButton();
-        wrapOrderPrepareParams();
-    });
-
-    function wrapOrderSubmitButton() {
+        payone.form = 'payment_form_payone_creditcard';
         order.submit = order.submit.wrap(
                 function (origMethod) {
-                    var radio_p1_cc = $('p_method_payone_creditcard');
-
-                    if (radio_p1_cc != undefined && radio_p1_cc != null && radio_p1_cc.checked
-                        && $('payone_pseudocardpan').value == ''){
-
-                        // Payone credit card payment method is available, and selected, initiate credit card check:
-                        payone.origMethod = origMethod;
-                        if (payone.validate('payment_form_payone_creditcard')) {
-                            payone.creditcardcheck();
-                        }
-                    }
-                    else
-                        origMethod();
-
+                    payone.exec(origMethod);
                 }
         );
-    }
-    function wrapOrderPrepareParams() {
         order.prepareParams = order.prepareParams.wrap(
                 function (origMethod, params) {
                     params = origMethod(params);
@@ -57,5 +41,6 @@
                     return params;
                 }
         );
-    }
+    });
+    //]]>
 </script>

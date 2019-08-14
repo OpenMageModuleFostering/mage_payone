@@ -62,4 +62,18 @@ class Payone_Core_Model_Observer_Sales_Order
 
         $this->helperConfig()->incrementCreditratingSampleCounter($storeId);
     }
+
+    /**
+     *
+     * @param Varien_Event_Observer $observer (has data 'payment' with a payment info instance (Mage_Sales_Model_Order_Payment))
+     */
+    public function cancelPayment(Varien_Event_Observer $observer)
+    {
+        /** @var $payment Mage_Sales_Model_Order_Payment */
+        $payment = $observer->getPayment();
+
+        $methodInstance = $payment->getMethodInstance();
+
+        $methodInstance->cancel($payment);
+    }
 }

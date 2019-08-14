@@ -162,7 +162,19 @@ class Payone_Core_Model_Domain_Protocol_TransactionStatus extends Mage_Core_Mode
             'invoice_grossamount',
             'invoice_date',
             'invoice_deliverydate',
-            'invoice_deliveryenddate');
+            'invoice_deliveryenddate',
+            'clearing_bankaccountholder',
+            'clearing_bankcountry',
+            'clearing_bankaccount',
+            'clearing_bankcode',
+            'clearing_bankiban',
+            'clearing_bankbic',
+            'clearing_bankcity',
+            'clearing_bankname',
+            'clearing_reference',
+            'clearing_duedate',
+            'clearing_legalnote',
+            'clearing_instructionnote');
 
         $rawData = $this->__toArray($allowedKeys);
         ksort($rawData);

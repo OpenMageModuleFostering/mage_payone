@@ -30,7 +30,8 @@
  * @license         <http://www.gnu.org/licenses/> GNU General Public License (GPL 3)
  * @link            http://www.noovias.com
  */
-class Payone_Core_Model_System_Config_MethodType extends Payone_Core_Model_System_Config_Abstract
+class Payone_Core_Model_System_Config_MethodType
+    extends Payone_Core_Model_System_Config_Abstract
 {
     /**
      * @return array
@@ -40,11 +41,15 @@ class Payone_Core_Model_System_Config_MethodType extends Payone_Core_Model_Syste
         $settingsCreditcard = new Payone_Settings_Configuration_PaymentMethod_CreditCard();
         $settingsOnlineBankTransfer = new Payone_Settings_Configuration_PaymentMethod_OnlineBankTransfer();
         $settingsWallet = new Payone_Settings_Configuration_PaymentMethod_Wallet();
+        $settingsFinancing = new Payone_Settings_Configuration_PaymentMethod_Financing();
+        $settingsSafeInvoice = new Payone_Settings_Configuration_PaymentMethod_Financing();
 
         $return = array_merge(
             $settingsCreditcard->getTypes(),
             $settingsOnlineBankTransfer->getTypes(),
-            $settingsWallet->getTypes()
+            $settingsWallet->getTypes(),
+            $settingsFinancing->getTypes(),
+            $settingsSafeInvoice->getTypes()
         );
 
         return $return;
@@ -58,11 +63,15 @@ class Payone_Core_Model_System_Config_MethodType extends Payone_Core_Model_Syste
         $settingsCreditcard = new Payone_Settings_Configuration_PaymentMethod_CreditCard();
         $settingsOnlineBankTransfer = new Payone_Settings_Configuration_PaymentMethod_OnlineBankTransfer();
         $settingsWallet = new Payone_Settings_Configuration_PaymentMethod_Wallet();
+        $settingsFinancing = new Payone_Core_Model_System_Config_FinancingType();
+        $settingsSafeInvoice = new Payone_Core_Model_System_Config_SafeInvoiceType();
 
         $return = array(
             'Creditcard' => $settingsCreditcard->getTypes(),
             'Online Bank Transfer' => $settingsOnlineBankTransfer->getTypes(),
-            'Wallet' => $settingsWallet->getTypes()
+            'Wallet' => $settingsWallet->getTypes(),
+            'Financing' => $settingsFinancing->toArray(),
+            'Safe Invoice' => $settingsSafeInvoice->toArray(),
         );
 
         return $return;

@@ -52,6 +52,7 @@ class Payone_Core_Model_Service_InitializePayment
 
         /** @var $service Payone_Core_Model_Service_Payment_Interface */
         $service = null;
+
         if ($config->isRequestAuthorization()) {
             $service = $this->getFactory()->getServicePaymentAuthorize($config);
         }

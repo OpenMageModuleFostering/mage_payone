@@ -33,6 +33,9 @@
 class Payone_Core_Model_Domain_Resource_Config_PaymentMethod_Collection
     extends Mage_Core_Model_Mysql4_Collection_Abstract
 {
+    /** @var Payone_Core_Model_Factory */
+    protected $factory = null;
+
     /**
      *
      */
@@ -108,71 +111,183 @@ class Payone_Core_Model_Domain_Resource_Config_PaymentMethod_Collection
     }
 
     /**
-     * @param $storeId int
-     * @param bool $removeParent
+     * @param int $id
+     * @param bool $includeDeleted
      * @return Payone_Core_Model_Domain_Resource_Config_PaymentMethod_Collection
      */
-    public function getCollectionByStoreId($storeId, $removeParent = false)
+    public function getCollectionByStoreId($id, $includeDeleted = false)
     {
-        // Add Filter is_deleted = 0
-        $store = Mage::app()->getStore($storeId);
-        $scopeId = $store->getId();
+        $store = Mage::app()->getStore($id);
+        $websiteId = $store->getWebsiteId();
 
-        // Add Filter (scope_id = 0) OR (scope_id = $this->getScopeId())
-        $this->addFieldToFilter('scope_id',
-            array(
-                array('attribute' => 'scope_id', 'eq' => 0),
-                array('attribute' => 'scope_id', 'eq' => $scopeId)
-            )
-        );
+        $results = array();
+        $globalCollection = $this->getCollectionByScopeId(0, 'default', $includeDeleted);
 
-        foreach ($this->getItems() as $key => $data) {
-            /**@var $data Payone_Core_Model_Domain_Config_PaymentMethod  */
-            if ($data->getScope() == 'stores' && $data->getScopeId() == $scopeId) {
-                $parentScope = 'websites';
-            }
-            elseif ($data->getScope() == 'websites' && $data->getScopeId() == $scopeId) {
-                $parentScope = 'default';
-            }
-            else {
+        // Cycle through default configs, there is one for each configures payment type.
+        foreach ($globalCollection as $globalConfigId => $globalConfig) {
+            $websiteConfigs = $this->getChildConfigs($globalConfigId, $websiteId, 'websites', $includeDeleted);
+            if (count($websiteConfigs) < 1) {
+                // No website scope config found, use global level config
+                $results[$globalConfigId] = $globalConfig;
                 continue;
             }
 
-            $parentField = 'parent_' . $parentScope . '_id';
-            $parentId = $data->getData($parentField);
-            /** @var $parentItem Payone_Core_Model_Domain_Config_PaymentMethod */
-            $parentItem = $this->getItemById($parentId);
-            //check for parent payment_config
-            if ($parentItem) {
-                $removeId = $parentId;
-                $grandParentScope = '';
-                if ($parentItem->getScope() == 'websites') {
-                    $grandParentScope = 'default';
-                    if ($removeParent) {
-                        $this->removeItemByKey($parentId);
-                    }
-                }
-                $grandParentField = 'parent_' . $grandParentScope . '_id';
-                $grandParentId = $parentItem->getData($grandParentField);
-                /** @var $grandParentItem Payone_Core_Model_Domain_Config_PaymentMethod */
-                $grandParentItem = $this->getItemById($grandParentId);
-                // check for grandparent payment_config
-                if ($grandParentItem) {
-                    $removeId = $grandParentId;
-                    $this->mergeData($parentItem, $grandParentItem);
-                }
+            $websiteConfig = $websiteConfigs->getFirstItem();
 
-                $this->mergeData($data, $parentItem);
+            $mergedConfig = $this->mergeConfigs($globalConfig, $websiteConfig);
 
-                // necessary to remove items from the result-collection, otherwise they items won't be removed
-                $item = $this->getItemById($removeId);
-                if ($removeParent) {
-                    $this->removeItemByKey($removeId);
-                }
+
+            $websiteConfigId = $websiteConfig->getId();
+            $storeConfigs = $this->getChildConfigs($websiteConfigId, $id, 'stores', $includeDeleted);
+            if (count($storeConfigs) < 1) {
+                // No storeView scope config found, use website level config
+                $results[$websiteConfigId] = $mergedConfig;
+                continue;
             }
+
+            $storeConfig = $storeConfigs->getFirstItem();
+            $finalConfig = $this->mergeConfigs($mergedConfig, $storeConfig);
+
+            $results[$storeConfig->getId()] = $finalConfig;
         }
+
+        $this->resetData();
+        foreach ($results as $config) {
+            $this->addItem($config);
+        }
+        $this->_isCollectionLoaded = true;
         return $this;
     }
+
+    /**
+     * @param int $id
+     * @param bool $includeDeleted
+     * @return Payone_Core_Model_Domain_Resource_Config_PaymentMethod_Collection
+     */
+    public function getCollectionByWebsiteId($id, $includeDeleted = false)
+    {
+        $results = array();
+        $globalCollection = $this->getCollectionByScopeId(0, 'default', $includeDeleted);
+
+        // Cycle through default configs, there is one for each configures payment type.
+        foreach ($globalCollection as $globalConfigId => $globalConfig) {
+            $websiteConfigs = $this->getChildConfigs($globalConfigId, $id, 'websites', $includeDeleted);
+            if (count($websiteConfigs) < 1) {
+                // No website scope config found, use global level config
+                $results[$globalConfigId] = $globalConfig;
+                continue;
+            }
+
+            /** @var $websiteConfig Payone_Core_Model_Domain_Resource_Config_PaymentMethod */
+            $websiteConfig = $websiteConfigs->getFirstItem();
+
+            $mergedConfig = $this->mergeConfigs($globalConfig, $websiteConfig);
+
+            $results[$websiteConfig->getId()] = $mergedConfig;
+        }
+
+        $this->resetData();
+        foreach ($results as $config) {
+            $this->addItem($config);
+        }
+        $this->_isCollectionLoaded = true;
+        return $this;
+    }
+
+    /**
+     * Fetch a collection filtered by scope and scopeId.
+     * This function will NOT modify this object, only return a NEW collection.
+     *
+     * @param int $scopeId
+     * @param string $scope               ('default', 'websites', 'stores')
+     * @param bool $includeDeleted true = collection also included configurations marked as "is_deleted = 1"
+     *
+     * @return Payone_Core_Model_Domain_Resource_Config_PaymentMethod_Collection
+     */
+    protected function getCollectionByScopeId($scopeId = 0, $scope = 'default', $includeDeleted = false)
+    {
+        /** @var $collection Payone_Core_Model_Domain_Resource_Config_PaymentMethod_Collection */
+        $collection = $this->getFactory()->getModelDomainConfigPaymentMethod()->getCollection();
+
+        $collection->addFieldToFilter('scope', $scope);
+        $collection->addFieldToFilter('scope_id', $scopeId);
+        if (!$includeDeleted) {
+            $collection->addFilterIsDeleted(0);
+        }
+
+        return $collection;
+    }
+
+    /**
+     * Fetch a collection filtered by scope and scopeId.
+     *
+     * @param int $scopeId
+     * @param string $scope               ('default', 'websites', 'stores')
+     *
+     * @return Payone_Core_Model_Domain_Resource_Config_PaymentMethod_Collection
+     * @throws Payone_Core_Exception_InvalidScope
+     */
+    public function getCollectionByScopeIdMerged($scopeId = 0, $scope = 'default')
+    {        if ($scope === 'default') {
+            $this->addFieldToFilter('scope', $scope);
+                    $this->addFieldToFilter('scope_id', $scopeId);
+            $this->addFilterIsDeleted(0);
+
+            return $this;
+        }
+        if ($scope === 'websites') {
+            return $this->getCollectionByWebsiteId($scopeId);
+        }
+        if ($scope === 'stores') {
+            return $this->getCollectionByStoreId($scopeId);
+        }
+        throw new Payone_Core_Exception_InvalidScope();
+    }
+
+    /**
+     * Merge config2 onto config1, config2 values overwrite config1 values.
+     *
+     * @param Payone_Core_Model_Domain_Config_PaymentMethod $config1
+     * @param Payone_Core_Model_Domain_Config_PaymentMethod $config2
+     *
+     * @return Payone_Core_Model_Domain_Config_PaymentMethod
+     */
+    protected function mergeConfigs(Payone_Core_Model_Domain_Config_PaymentMethod $config1,
+                                    Payone_Core_Model_Domain_Config_PaymentMethod $config2)
+    {
+        foreach ($config2->getData() as $key => $value) {
+            if (isset($value)) {
+                $config1->setData($key, $config2->getData($key));
+            }
+        }
+        return $config1;
+    }
+
+    /**
+     * @param int $parentId
+     * @param int $scopeId
+     * @param string $scope ('default', 'websites', 'stores')
+     *
+     * @return Payone_Core_Model_Domain_Resource_Config_PaymentMethod_Collection
+     */
+    public function getChildConfigs($parentId, $scopeId, $scope)
+    {
+        /** @var $collection Payone_Core_Model_Domain_Resource_Config_PaymentMethod_Collection */
+        $collection = $this->getFactory()->getModelDomainConfigPaymentMethod()->getCollection();
+
+        $parentIdField = 'websites';
+        if ($scope === 'websites') {
+            $parentIdField = 'parent_default_id';
+        }
+        if ($scope === 'stores') {
+            $parentIdField = 'parent_websites_id';
+        }
+        $collection = $this->getCollectionByScopeId($scopeId, $scope);
+        $collection->addFieldToFilter($parentIdField, $parentId);
+
+        return $collection;
+    }
+
 
     /**
      * @param Payone_Core_Model_Domain_Config_PaymentMethod $child
@@ -190,5 +305,24 @@ class Payone_Core_Model_Domain_Resource_Config_PaymentMethod_Collection
             }
         }
         return $child;
+    }
+
+    /**
+     * @param Payone_Core_Model_Factory $factory
+     */
+    public function setFactory(Payone_Core_Model_Factory $factory)
+    {
+        $this->factory = $factory;
+    }
+
+    /**
+     * @return Payone_Core_Model_Factory
+     */
+    public function getFactory()
+    {
+        if ($this->factory === null) {
+            $this->factory = new Payone_Core_Model_Factory();
+        }
+        return $this->factory;
     }
 }

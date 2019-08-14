@@ -26,44 +26,30 @@
  * @param config
  * @constructor
  */
-PAYONE.Service.CreditCardCheck = function (config, isAdmin) {
-    this.isAdmin = isAdmin == true;
+PAYONE.Service.CreditCardCheck = function (handler, form, config) {
+    this.handler = handler;
+    this.form = form;
     this.config = config;
     this.origMethod = '';
 
     /**
-     * Wrap to include PAYONE payment.save
-     */
-    this.wrapPaymentSaveButton = function () {
-        payment.payoneServiceCreditCardCheck = this;
-        payment.save = payment.save.wrap(this.paymentSave);
-    };
-
-    /**
      * Enhances payment.save and runs Validate and CreditCardCheck for CreditCards
-     *
+     * @todo rename this method?
      * @param origMethod
      */
-    this.paymentSave = function (origMethod) {
-        var radio_p1_cc = $('p_method_payone_creditcard');
+    this.exec = function (origMethod) {
+        var check = this.handler.haveToValidate();
 
-        if (radio_p1_cc != undefined && radio_p1_cc != null && radio_p1_cc.checked) {
-            if (checkout.loadWaiting != false) {
-                return;
-            }
-
-            if (payment.validate() != true) {
-                return;
-            }
-
+        if (check == 1) {
+            this.handler.origMethod = origMethod;
             // Payone credit card payment method is available, and selected, initiate credit card check:
-            if (payment.payoneServiceCreditCardCheck.validate(payment.form)) {
-                payment.payoneServiceCreditCardCheck.creditcardcheck();
+            if (this.validate(this.form)) {
+                this.creditcardcheck();
             }
         }
-        else
+        else {
             origMethod();
-
+        }
     };
 
     /**
@@ -72,7 +58,7 @@ PAYONE.Service.CreditCardCheck = function (config, isAdmin) {
      * @param element
      */
     this.displayCheckCvc = function (element) {
-        config = JSON.parse($('payone_creditcard_config_cvc').value);
+        config = $('payone_creditcard_config_cvc').value.evalJSON();
         ccKey = element.value;
         var cvcDiv = $("payone_creditcard_cc_cid_div");
         if (cvcDiv != undefined && cvcDiv != null) {
@@ -158,51 +144,7 @@ PAYONE.Service.CreditCardCheck = function (config, isAdmin) {
      * @return {Boolean}
      */
     this.handleResponseCreditcardCheck = function (response) {
-        // @todo we could optimize this and create seperate Handler Classes
-        if (response.status != 'VALID') {
-            // Failure
-            alert(response.customermessage);
-            if (this.isAdmin == false) {
-                checkout.setLoadWaiting(false);
-            }
-            return false;
-        }
-        else {
-            // Success!
-            var pseudocardpan = response.pseudocardpan;
-            var truncatedcardpan = response.truncatedcardpan;
-
-            $('payone_pseudocardpan').setValue(pseudocardpan);
-            $('payone_truncatedcardpan').setValue(truncatedcardpan);
-            $('payone_creditcard_cc_number').setValue(truncatedcardpan);
-
-            cid = $('payone_creditcard_cc_cid');
-            if (cid != undefined) {
-                $('payone_creditcard_cc_cid').setValue('')
-            }
-
-            if (this.isAdmin == false) {
-                checkout.setLoadWaiting('payment',false);
-                // Post payment form to Magento:
-                var request = new Ajax.Request(
-                    payment.saveUrl,
-                    {
-                        method:'post',
-                        onComplete:payment.onComplete,
-                        onSuccess:payment.onSave,
-                        onFailure:checkout.ajaxFailure.bind(checkout),
-                        parameters:Form.serialize(payment.form)
-                    }
-                );
-            }
-            else {
-                // remove validation class cause CreditCard is validated
-                // @todo when changing CardData it has to be added again or we exchange the form with labels and provide an edit button
-                $('payone_creditcard_cc_number').removeClassName('validate-cc-number');
-                $('payone_creditcard_cc_number').removeClassName('validate-payone-cc-type');
-                this.origMethod();
-            }
-        }
+        return this.handler.handleResponse(response);
     };
 
     /**
@@ -210,14 +152,108 @@ PAYONE.Service.CreditCardCheck = function (config, isAdmin) {
      *
      * @return {*}
      */
-    this.getConfig = function ()
-    {
-        if (this.config == '' || this.config == undefined)
-        {
+    this.getConfig = function () {
+        if (this.config == '' || this.config == undefined) {
             configJson = $('payone_creditcard_config').value;
-            this.config = JSON.parse(configJson);
+            this.config = configJson.evalJSON();
         }
         return this.config;
+    };
+};
+
+PAYONE.Handler.CreditCardCheck = {};
+PAYONE.Handler.CreditCardCheck.OnepageCheckout = function () {
+    this.origMethod = '';
+
+    this.haveToValidate = function () {
+        var radio_p1_cc = $('p_method_payone_creditcard');
+        if (radio_p1_cc != undefined && radio_p1_cc != null && radio_p1_cc.checked) {
+            if (checkout.loadWaiting != false) {
+                return 0;
+            }
+            if (payment.validate() != true) {
+                return 0;
+            }
+            return 1;
+        }
+        return 0;
+    };
+
+    this.handleResponse = function (response) {
+        if (response.status != 'VALID') {
+            // Failure
+            alert(response.customermessage);
+            checkout.setLoadWaiting(false);
+            return false;
+        }
+
+        // Success!
+        var pseudocardpan = response.pseudocardpan;
+        var truncatedcardpan = response.truncatedcardpan;
+
+        $('payone_pseudocardpan').setValue(pseudocardpan);
+        $('payone_truncatedcardpan').setValue(truncatedcardpan);
+        $('payone_creditcard_cc_number').setValue(truncatedcardpan);
+
+        cid = $('payone_creditcard_cc_cid');
+        if (cid != undefined) {
+            $('payone_creditcard_cc_cid').setValue('')
+        }
+
+        checkout.setLoadWaiting('payment', false);
+
+        // Post payment form to Magento:
+        var request = new Ajax.Request(
+            payment.saveUrl,
+            {
+                method:'post',
+                onComplete:payment.onComplete,
+                onSuccess:payment.onSave,
+                onFailure:checkout.ajaxFailure.bind(checkout),
+                parameters:Form.serialize(payment.form)
+            }
+        );
+    };
+};
+
+PAYONE.Handler.CreditCardCheck.Admin = function () {
+    this.origMethod = '';
+
+    this.haveToValidate = function () {
+        var radio_p1_cc = $('p_method_payone_creditcard');
+
+        if (radio_p1_cc != undefined && radio_p1_cc != null && radio_p1_cc.checked
+            && $('payone_pseudocardpan').value == '') {
+            return 1;
+        }
+        return 0;
+    };
+
+    this.handleResponse = function (response) {
+        if (response.status != 'VALID') {
+            // Failure
+            alert(response.customermessage);
+            return false;
+        }
+
+        // Success!
+        var pseudocardpan = response.pseudocardpan;
+        var truncatedcardpan = response.truncatedcardpan;
+
+        $('payone_pseudocardpan').setValue(pseudocardpan);
+        $('payone_truncatedcardpan').setValue(truncatedcardpan);
+        $('payone_creditcard_cc_number').setValue(truncatedcardpan);
+
+        cid = $('payone_creditcard_cc_cid');
+        if (cid != undefined) {
+            $('payone_creditcard_cc_cid').setValue('')
+        }
+
+        // remove validation class cause CreditCard is validated
+        // @todo when changing CardData it has to be added again or we exchange the form with labels and provide an edit button
+        $('payone_creditcard_cc_number').removeClassName('validate-cc-number');
+        $('payone_creditcard_cc_number').removeClassName('validate-payone-cc-type');
+        this.origMethod();
     };
 };
 
@@ -247,7 +283,7 @@ PAYONE.Validation.CreditCard = function (config) {
         var year = $('payone_creditcard_cc_expiration_year').value;
         var validityCc = new Date(year, v, 1); // Start of next month
 
-        return validityCc > this.options.get('config').allowed_validity;
+        return validityCc.getTime() > this.options.get('config').allowed_validity * 1000; // milliseconds vs. seconds
     };
 
     /**

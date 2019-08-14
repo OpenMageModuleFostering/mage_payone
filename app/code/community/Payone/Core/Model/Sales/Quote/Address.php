@@ -67,9 +67,16 @@ class Payone_Core_Model_Sales_Quote_Address extends Mage_Sales_Model_Quote_Addre
         if ($this->helperCompatibility()->isEnabledDsdataNoState()) {
             // we need to instantiate without Mage::getModel, cause no model is defined for NoState
             if (class_exists('Dsdata_NoState_Model_Quote_Address')) {
-                $dsdataAddress = new Dsdata_NoState_Model_Quote_Address($this->getData());
-                $errors = $dsdataAddress->validate();
+                $address = new Dsdata_NoState_Model_Quote_Address($this->getData());
+                $errors = $address->validate();
             }
+        }
+        elseif ($this->helperCompatibility()->isEnabledGoMageLightCheckout()) {
+            /**
+             * @var $address GoMage_Checkout_Model_Quote_Address
+             */
+            $address = Mage::getModel('gomage_checkout/quote_address', $this->getData());
+            $errors = $address->validate();
         }
         else {
             $errors = parent::validate();

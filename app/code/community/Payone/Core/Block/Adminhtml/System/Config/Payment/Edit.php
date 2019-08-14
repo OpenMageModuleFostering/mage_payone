@@ -69,6 +69,11 @@ class Payone_Core_Block_Adminhtml_System_Config_Payment_Edit
 
             $this->setChild('form', $block);
         }
+        $activeScope = Mage::registry('payone_core_config_active_scope');
+        if ($activeScope != 'default') {
+          $this->_removeButton('delete'); // Not allowed to delete configs from scopes "websites" or "stores".
+        }
+
 
         return parent::_prepareLayout();
     }

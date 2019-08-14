@@ -64,8 +64,8 @@ class Payone_Core_Helper_Data
      */
     public function getMagentoEdition()
     {
-        if (version_compare($this->getMagentoVersion(), '1.7', '>=')) {
-            // getEdition is only available after Magentoversion 1.7.0.0
+        if (method_exists('Mage', 'getEdition')) {
+            // getEdition is only available after Magento CE Version 1.7.0.0
             $edition = Mage::getEdition();
             switch ($edition) {
                 case Mage::EDITION_COMMUNITY :
@@ -98,6 +98,59 @@ class Payone_Core_Helper_Data
         return $edition;
     }
 
+    /**
+     * Determine installer style to use, by Magento version/edition
+     * Pre-CE1.6 = use SQL script
+     *
+     * @return bool
+     */
+    public function mustUseSqlInstaller()
+    {
+        $magentoVersion = $this->getMagentoVersion();
+
+        switch ($this->getMagentoEdition()) {
+            case 'CE' :
+                if (version_compare($magentoVersion, '1.6', '<')) {
+                    return true;
+                }
+                break;
+            case 'EE' : // Intentional fallthrough
+            case 'PE' :
+            if (version_compare($magentoVersion, '1.11', '<')) {
+                return true;
+            }
+                break;
+        }
+
+        return false;
+    }
+
+     /**
+     * Determine if Magento App Emulation is available
+     *
+     * @return bool
+     */
+    public function canUseAppEmulation()
+    {
+        $magentoVersion = $this->getMagentoVersion();
+
+        switch ($this->getMagentoEdition()) {
+            case 'CE' :
+                if (version_compare($magentoVersion, '1.5', '<')) {
+                    return false;
+                }
+                break;
+            case 'EE' : // Intentional fallthrough
+            case 'PE' :
+                if (version_compare($magentoVersion, '1.10', '<')) {
+                    return false;
+                }
+                break;
+        }
+
+        return true;
+    }
+    
     /**
      * @return int
      */
@@ -216,4 +269,31 @@ class Payone_Core_Helper_Data
         return $hash;
     }
 
+    /**
+     * @param Mage_Customer_Model_Address_Abstract $address1
+     * @param Mage_Customer_Model_Address_Abstract $address2
+     * @return bool
+     */
+    public function addressesAreEqual(Mage_Customer_Model_Address_Abstract $address1, Mage_Customer_Model_Address_Abstract $address2)
+    {
+        $hash1 = $this->createAddressHash($address1);
+        $hash2 = $this->createAddressHash($address2);
+                
+        if($hash1 == $hash2)
+            return true;
+        return false;
+    }
+
+    /**
+     * Check if Mage-Compiler is enabled
+     * @return bool
+     */
+    public function isCompilerEnabled()
+    {
+        if(defined('COMPILER_INCLUDE_PATH'))
+        {
+            return true;
+        }
+        return false;
+    }
 }

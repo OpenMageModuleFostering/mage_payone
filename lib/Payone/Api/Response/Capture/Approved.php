@@ -73,6 +73,38 @@ class Payone_Api_Response_Capture_Approved extends Payone_Api_Response_Abstract
      */
     protected $clearing_bankname = NULL;
 
+    /** @var string */
+    protected $clearing_legalnote = NULL;
+
+    /**
+     * (YYYYMMDD)
+     * @var string
+     */
+    protected $clearing_duedate = NULL;
+
+    /** @var string */
+    protected $clearing_reference = NULL;
+
+    /** @var string */
+    protected $clearing_instructionnote = NULL;
+
+    /**
+     * @var string
+     */
+    protected $mandate_identification = NULL;
+    /**
+     * @var string
+     */
+    protected $creditor_identifier = NULL;
+    /**
+     * @var int
+     */
+    protected $clearing_date = NULL;
+    /**
+     * @var int
+     */
+    protected $clearing_amount = NULL;
+
     /**
      * @param string $clearing_bankaccount
      */
@@ -231,5 +263,133 @@ class Payone_Api_Response_Capture_Approved extends Payone_Api_Response_Abstract
     public function getTxid()
     {
         return $this->txid;
+    }
+
+    /**
+     * @param string $clearing_duedate
+     */
+    public function setClearingDuedate($clearing_duedate)
+    {
+        $this->clearing_duedate = $clearing_duedate;
+    }
+
+    /**
+     * @return string
+     */
+    public function getClearingDuedate()
+    {
+        return $this->clearing_duedate;
+    }
+
+    /**
+     * @param string $clearing_instructionnote
+     */
+    public function setClearingInstructionnote($clearing_instructionnote)
+    {
+        $this->clearing_instructionnote = $clearing_instructionnote;
+    }
+
+    /**
+     * @return string
+     */
+    public function getClearingInstructionnote()
+    {
+        return $this->clearing_instructionnote;
+    }
+
+    /**
+     * @param string $clearing_legalnote
+     */
+    public function setClearingLegalnote($clearing_legalnote)
+    {
+        $this->clearing_legalnote = $clearing_legalnote;
+    }
+
+    /**
+     * @return string
+     */
+    public function getClearingLegalnote()
+    {
+        return $this->clearing_legalnote;
+    }
+
+    /**
+     * @param string $clearing_reference
+     */
+    public function setClearingReference($clearing_reference)
+    {
+        $this->clearing_reference = $clearing_reference;
+    }
+
+    /**
+     * @return string
+     */
+    public function getClearingReference()
+    {
+        return $this->clearing_reference;
+    }
+
+    /**
+     * @param string $mandateIdentification
+     */
+    public function setMandateIdentification($mandateIdentification)
+    {
+        $this->mandate_identification = $mandateIdentification;
+    }
+
+    /**
+     * @return string
+     */
+    public function getMandateIdentification()
+    {
+        return $this->mandate_identification;
+    }
+
+    /**
+     * @param string $creditorIdentifier
+     */
+    public function setCreditorIdentifier($creditorIdentifier)
+    {
+        $this->creditor_identifier = $creditorIdentifier;
+    }
+
+    /**
+     * @return string
+     */
+    public function getCreditorIdentifier()
+    {
+        return $this->creditor_identifier;
+    }
+
+    /**
+     * @param int $clearingDate
+     */
+    public function setClearingDate($clearingDate)
+    {
+        $this->clearing_date = $clearingDate;
+    }
+
+    /**
+     * @return int
+     */
+    public function getClearingDate()
+    {
+        return $this->clearing_date;
+    }
+
+    /**
+     * @param int $clearingAmount
+     */
+    public function setClearingAmount($clearingAmount)
+    {
+        $this->clearing_amount = $clearingAmount;
+    }
+
+    /**
+     * @return int
+     */
+    public function getClearingAmount()
+    {
+        return $this->clearing_amount;
     }
 }

@@ -266,7 +266,7 @@ class Payone_Core_Block_Adminhtml_Sales_Order_Grid extends Mage_Adminhtml_Block_
 
         $this->getMassactionBlock()->addItem('print_shipping_label', array(
              'label'=> Mage::helper('sales')->__('Print Shipping Labels'),
-             'url'  => $this->getUrl('*/*/massPrintShippingLabel'),
+             'url'  => $this->getUrl('adminhtml/sales_order_shipment/massPrintShippingLabel'),
         ));
 
         return $this;

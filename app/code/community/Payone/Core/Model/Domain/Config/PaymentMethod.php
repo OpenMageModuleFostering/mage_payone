@@ -40,7 +40,7 @@
  * @method string getCode()
  * @method setName($name)
  * @method string getName()
- * @mehtod setSortOrder($sortOrder)
+ * @mehtod          setSortOrder($sortOrder)
  * @method int getSortOrder()
  * @method setEnabled($enabled)
  * @method int getEnabled()
@@ -65,10 +65,18 @@
  * @method setInvoiceTransmit($invoiceTransmit)
  * @method int getInvoiceTransmit()
  * @method setTypes($types)
+ * @method setKlarnaConfig($klarnaConfig)
  * @method setCheckCvc($checkCvc)
  * @method int getCheckCvc()
  * @method setCheckBankAccount($checkBankaccount)
  * @method int getCheckBankAccount()
+ * @method setSepaCountry($sepaCountry)
+ * @method setSepaDeShowBankData($sepaDeShowBankData)
+ * @method int getSepaDeShowBankData()
+ * @method setSepaMandateEnabled($sepaMandateEnabled)
+ * @method int getSepaMandateEnabled()
+ * @method setSepaMandateDownloadEnabled($sepaMandateDownloadEnabled)
+ * @method int getSepaMandateDownloadEnabled()
  * @method setMinOrderTotal($minOrderTotal)
  * @method float getMinOrderTotal()
  * @method setMaxOrderTotal($maxOrderTotal)
@@ -91,8 +99,15 @@
  * @method setGroups($groups)
  * @method array getGroups()
  */
-class Payone_Core_Model_Domain_Config_PaymentMethod extends Mage_Core_Model_Abstract
+class Payone_Core_Model_Domain_Config_PaymentMethod
+    extends Mage_Core_Model_Abstract
 {
+    /** @var Payone_Core_Model_Factory */
+    protected $factory = null;
+
+
+    protected $isNew = false;
+
     /**
      *
      */
@@ -117,6 +132,7 @@ class Payone_Core_Model_Domain_Config_PaymentMethod extends Mage_Core_Model_Abst
         }
 
         $originModel = $this->loadOriginPaymentMethodConfig();
+
         if ($originModel
                 && ($this->getScope() != $originModel->getScope()
                         || $this->getScopeId() != $originModel->getScopeId()
@@ -134,9 +150,14 @@ class Payone_Core_Model_Domain_Config_PaymentMethod extends Mage_Core_Model_Abst
             if ($originModel->getScope() != $parentScope) {
                 $parentField = 'parent_' . $originModel->getScope() . '_id';
                 /** @var $dummy Payone_Core_Model_Domain_Config_PaymentMethod */
-                $dummy = Mage::getModel('payone_core/domain_config_paymentMethod');
+
+                /** @var $store Mage_Core_Model_Store */
+                $store = $this->getFactory()->getModelCoreStore()->load($this->getScopeId());
+                $websiteId = $store->getWebsiteId();
+
+                $dummy = $this->getFactory()->getModelDomainConfigPaymentMethod();
                 $dummy->setScope($parentScope);
-                $dummy->setScopeId($this->getScopeId());
+                $dummy->setScopeId($websiteId);
                 $dummy->setCode($originModel->getCode());
                 $dummy->setData($parentField, $this->getId());
                 $dummy->setMode(null);
@@ -144,8 +165,7 @@ class Payone_Core_Model_Domain_Config_PaymentMethod extends Mage_Core_Model_Abst
                 $dummy->setName($originModel->getName());
                 $dummy->save();
             }
-            else
-            {
+            else {
                 $dummy = null;
             }
 
@@ -155,6 +175,20 @@ class Payone_Core_Model_Domain_Config_PaymentMethod extends Mage_Core_Model_Abst
             $this->unsetData('id');
         }
 
+        if ($this->getIsDeleted()) {
+            // On "delete" we have to mark all child configs as deleted as well:
+            $children = $this->loadChildPaymentMethodConfigs();
+            if ($children) {
+                foreach ($children as $child) {
+                    /** @var $child Payone_Core_Model_Domain_Config_PaymentMethod */
+                    $child->setIsDeleted(1);
+                    $child->save();
+                }
+            }
+
+        }
+
+
         $code = $this->getCode();
         if (empty($code)) {
             $this->setCode($originModel->getCode());
@@ -163,6 +197,7 @@ class Payone_Core_Model_Domain_Config_PaymentMethod extends Mage_Core_Model_Abst
         $this->prepareData();
 
         if ($this->isObjectNew()) {
+            $this->isNew = true; // to trigger actions in _afterSave()
             $this->setCreatedAt(date('Y-m-d H:i:s'));
             $this->setUpdatedAt(date('Y-m-d H:i:s'));
         }
@@ -174,6 +209,126 @@ class Payone_Core_Model_Domain_Config_PaymentMethod extends Mage_Core_Model_Abst
     }
 
     /**
+     * On creation of a new configuration, propagate it to the deeper scopes, with all possible values inherited
+     * _afterSave is called on the new objects as well.
+     *
+     * @return Mage_Core_Model_Abstract
+     */
+    protected function _afterSave()
+    {
+        if ($this->isNew) {
+            // Check the next "deeper" scope, if no config exists, add inherited configs
+            $myScope = $this->getScope();
+            if ($myScope == 'default') {
+                $websites = $this->getFactory()->getModelCoreWebsite()->getCollection();
+
+                // 1 for each website
+                foreach ($websites as $website) {
+                    /** @var $website Mage_Core_Model_Website */
+                    $this->saveChildConfig($website->getId(), 'websites');
+
+                }
+            }
+            elseif ($myScope == 'websites') {
+                /** @var $stores Mage_Core_Model_Mysql4_Store_Collection */
+                $stores = $this->getFactory()->getModelCoreStore()->getCollection();
+                $stores->addFieldToFilter('website_id', $this->getScopeId());
+
+                // 1 for each storeView on the website
+                foreach ($stores as $store) {
+                    /** @var $store Mage_Core_Model_Store */
+                    $this->saveChildConfig($store->getId(), 'stores');
+
+                }
+            }
+        }
+        return parent::_afterSave();
+    }
+
+    /**
+     * Save a child config that inherits all data from current model
+     * 
+     * @param $scopeId
+     * @param $childScope
+     *
+     * @return void
+     */
+    protected function saveChildConfig($scopeId, $childScope)
+    {
+
+        if ($childScope == 'websites') {
+            $parentField = 'parent_default_id';
+        }
+        elseif ($childScope == 'stores') {
+            $parentField = 'parent_websites_id';
+        }
+        else {
+            return;
+        }
+
+        $childConfig = $this->getFactory()->getModelDomainConfigPaymentMethod();
+        $childConfig->setScope($childScope);
+        $childConfig->setScopeId($scopeId);
+        $childConfig->setCode($this->getCode());
+        $childConfig->setData($parentField, $this->getId());
+
+        $childConfig->save();
+
+
+    }
+
+    /**
+     * @param int $storeId
+     * @param array $defaultConfig
+     * @return Payone_Core_Model_Config_Payment_Method_Interface
+     */
+    public function toConfigPayment($storeId, array $defaultConfig = array())
+    {
+        /**
+         * The object we want to return:
+         * @var $configMethod Payone_Core_Model_Config_Payment_Method */
+        $configMethod = $this->getFactory()->getModelConfigPaymentMethod();
+
+        $configMethod->init($this->_data);
+
+        // Use Global Config if use_global is set
+        if ($configMethod->getUseGlobal()) {
+            $configMethod->init($defaultConfig);
+        }
+        else {
+            // Check globals also if they are not to use
+            foreach ($defaultConfig as $key => $value) {
+                if (!array_key_exists($key, $this->_data) || $this->_data[$key] == '') {
+                    $this->_data[$key] = $value;
+                }
+            }
+            $configMethod->init($this->_data);
+        }
+
+        // init Allowed Countries
+        if (array_key_exists('allowspecific', $this->_data) and $this->getAllowspecific()) {
+            $allowedCountries = $configMethod->getSpecificcountry();
+        }
+        else {
+            $generalAllowedCountries = $this->helperConfig()->getStoreConfig('general/country/allow', $storeId);
+            $allowedCountries = explode(',', $generalAllowedCountries);
+        }
+        $configMethod->setAllowedCountries($allowedCountries);
+
+        $parentDefaultId = $this->getParentDefaultId();
+        $parentWebsitesId = $this->getParentWebsitesId();
+        if (!empty($parentDefaultId) && empty($parentWebsitesId)) {
+            $configMethod->setParent($parentDefaultId);
+            return $configMethod;
+        }
+        elseif (!empty($parentWebsitesId)) {
+            $configMethod->setParent($parentWebsitesId);
+            return $configMethod;
+        }
+        return $configMethod;
+    }
+
+    /**
      * Load original PaymentMethod from Database
      * @return Payone_Core_Model_Domain_Config_PaymentMethod
      */
@@ -182,10 +337,34 @@ class Payone_Core_Model_Domain_Config_PaymentMethod extends Mage_Core_Model_Abst
         if ($this->getId()) {
 
             /** @var $originModel Payone_Core_Model_Domain_Config_PaymentMethod */
-            $originModel = Mage::getModel('payone_core/domain_config_paymentMethod');
+            $originModel = $this->getFactory()->getModelDomainConfigPaymentMethod();
             $originModel->load($this->getId());
             $originModel->prepareData();
             return $originModel;
+        }
+        return null;
+    }
+
+    /**
+     * @return Payone_Core_Model_Domain_Resource_Config_PaymentMethod_Collection|null
+     */
+    public function loadChildPaymentMethodConfigs()
+    {
+        if ($this->getId()) {
+            if ($this->getScope() == 'default') {
+                $parentFieldName = 'parent_default_id';
+            }
+            elseif ($this->getScope() == 'websites') {
+                $parentFieldName = 'parent_websites_id';
+            }
+            else {
+                return array();
+            }
+            /** @var $collection Payone_Core_Model_Domain_Resource_Config_PaymentMethod_Collection */
+            $collection = $this->getCollection();
+            $collection->addFieldToFilter($parentFieldName, $this->getId());
+
+            return $collection;
         }
         return null;
     }
@@ -272,12 +451,13 @@ class Payone_Core_Model_Domain_Config_PaymentMethod extends Mage_Core_Model_Abst
             else {
                 $value = array_pop($fieldValue);
                 switch ($fieldKey) {
+                    case 'klarna_config':
                     case 'fee_config':
                         unset($value['__empty']);
                         $value = empty($value) ? null : $value;
                         break;
                     case 'use_global':
-                        if($value){
+                        if ($value) {
                             // set data to null if we use global config
                             $mappedData['allowspecific'] = null;
                             $mappedData['specificcountry'] = null;
@@ -292,8 +472,8 @@ class Payone_Core_Model_Domain_Config_PaymentMethod extends Mage_Core_Model_Abst
                     default:
                         if (!isset($value)) {
                             continue 2;
-                        }elseif($value == '')
-                        {
+                        }
+                        elseif ($value == '') {
                             $value = null;
                         }
                         break;
@@ -400,8 +580,20 @@ class Payone_Core_Model_Domain_Config_PaymentMethod extends Mage_Core_Model_Abst
     {
         // prepare fee_config
         $this->unserializeData('fee_config');
+        // prepare klarna config
+        $this->unserializeData('klarna_config');
         $this->explodeData('types');
         $this->explodeData('specificcountry');
+        $this->explodeData('sepa_country');
+    }
+
+
+    /**
+     * @return Payone_Core_Helper_Config
+     */
+    protected function helperConfig()
+    {
+        return $this->getFactory()->helperConfig();
     }
 
     /**
@@ -415,8 +607,14 @@ class Payone_Core_Model_Domain_Config_PaymentMethod extends Mage_Core_Model_Abst
         // prepare specificcountry
         $this->implodeData('specificcountry');
 
+        // prepare sepa_country
+        $this->implodeData('sepa_country');
+
         // prepare fee_config
         $this->serializeData('fee_config');
+
+        // prepare klarna_config
+        $this->serializeData('klarna_config');
     }
 
     /**
@@ -486,9 +684,46 @@ class Payone_Core_Model_Domain_Config_PaymentMethod extends Mage_Core_Model_Abst
     /**
      * @return array
      */
+    public function getKlarnaConfig()
+    {
+        $this->unserializeData('klarna_config');
+        return $this->getData('klarna_config');
+    }
+
+    /**
+     * @return array
+     */
     public function getSpecificcountry()
     {
         $this->explodeData('specificcountry');
         return $this->getData('specificcountry');
+    }
+
+    /**
+     * @return array
+     */
+    public function getSepaCountry()
+    {
+        $this->explodeData('sepa_country');
+        return $this->getData('sepa_country');
+    }
+
+    /**
+     * @return Payone_Core_Model_Factory
+     */
+    public function getFactory()
+    {
+        if ($this->factory === null) {
+            $this->factory = new Payone_Core_Model_Factory();
+        }
+        return $this->factory;
+    }
+
+    /**
+     * @param Payone_Core_Model_Factory $factory
+     */
+    public function setFactory(Payone_Core_Model_Factory $factory)
+    {
+        $this->factory = $factory;
     }
 }

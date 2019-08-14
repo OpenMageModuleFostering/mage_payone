@@ -47,6 +47,9 @@ class Payone_Core_Model_Sales_Quote_Address_Total_Fee
         $quote = $address->getQuote();
         $payment = $quote->getPayment();
 
+        if($address->getAddressType() === 'billing')
+            return $this;
+
         $configId = $payment->getPayoneConfigPaymentMethodId();
         if (empty($configId)) {
             return $this;

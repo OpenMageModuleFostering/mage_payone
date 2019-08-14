@@ -35,11 +35,20 @@ class Payone_Core_Helper_Compatibility
 {
     public function isEnabledDsdataNoState()
     {
-        $isActive = false;
+        return $this->isModuleActive('Dsdata_NoState');
+    }
 
-        $dsdataNoStateModule = Mage::getConfig()->getModuleConfig('Dsdata_NoState');
-        if ($dsdataNoStateModule instanceof Varien_Simplexml_Element) {
-            $active = (string)$dsdataNoStateModule->active;
+    public function isEnabledGoMageLightCheckout()
+    {
+        return $this->isModuleActive('GoMage_Checkout');
+    }
+
+    protected function isModuleActive($name)
+    {
+        $isActive = false;
+        $module = Mage::getConfig()->getModuleConfig($name);
+        if ($module instanceof Varien_Simplexml_Element) {
+            $active = (string)$module->active;
             if ($active === 'true') {
                 $isActive = true;
             }

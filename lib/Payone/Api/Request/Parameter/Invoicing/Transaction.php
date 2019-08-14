@@ -54,8 +54,11 @@ class Payone_Api_Request_Parameter_Invoicing_Transaction
      */
     protected $invoiceappendix = NULL;
 
+
+
+
     /**
-     * @var Payone_Api_Request_Parameter_Invoicing_Item[|
+     * @var Payone_Api_Request_Parameter_Invoicing_Item[]
      */
     protected $items = array();
 
@@ -94,7 +97,7 @@ class Payone_Api_Request_Parameter_Invoicing_Transaction
     }
 
     /**
-     * @param Payone_Api_Request_Parameter_Invoicing_Item $items
+     * @param Payone_Api_Request_Parameter_Invoicing_Item[] $items
      */
     public function setItems($items)
     {
@@ -102,7 +105,7 @@ class Payone_Api_Request_Parameter_Invoicing_Transaction
     }
 
     /**
-     * @return Payone_Api_Request_Parameter_Invoicing_Item
+     * @return Payone_Api_Request_Parameter_Invoicing_Item[]
      */
     public function getItems()
     {

@@ -30,9 +30,11 @@
  * @license         <http://www.gnu.org/licenses/> GNU General Public License (GPL 3)
  * @link            http://www.noovias.com
  */
-class Payone_Core_Block_Adminhtml_System_Config_Payment_Grid extends Mage_Adminhtml_Block_Widget_Grid
+class Payone_Core_Block_Adminhtml_System_Config_Payment_Grid
+    extends Mage_Adminhtml_Block_Widget_Grid
 {
 
+    protected $_defaultLimit    = 200;
     /**
      *
      */
@@ -69,20 +71,37 @@ class Payone_Core_Block_Adminhtml_System_Config_Payment_Grid extends Mage_Adminh
     protected function getConfigPaymentCollection()
     {
         if (!Mage::registry('payone_core_adminhtml_system_config_payment_collection')) {
-            /** @var $store Mage_Core_Model_Store */
             $storeCode = $this->getRequest()->getParam('store');
-            $store = $this->getPayoneFactory()->getModelCoreStore();
-            $store->load($storeCode, 'code');
+            $websiteCode = $this->getRequest()->getParam('website');
+
+            /** @var $store Mage_Core_Model_Website */
+            $website = $this->getPayoneFactory()->getModelCoreWebsite();
+            $website->load($websiteCode, 'code');
 
             /** @var $methodConfigCollection Payone_Core_Model_Domain_Resource_Config_PaymentMethod_Collection */
-            $methodConfigCollection = $this->getPayoneFactory()->getModelDomainConfigPaymentMethod()->getCollection();
-            $methodConfigCollection->filterExcludeDeleted();
-            if (!$storeCode) {
-                $methodConfigCollection->filterExcludeStoresScope();
-            }
+            $methodConfigCollection = $this->getPayoneFactory()->getModelDomainConfigPaymentMethod()
+                    ->getCollection();
             $methodConfigCollection->addSortOrder('id');
-            $methodConfigCollection->getCollectionByStoreId($store->getId(), true);
 
+
+            if (empty($storeCode) && $website->hasData()) {
+
+                $methodConfigCollection->getCollectionByScopeIdMerged($website->getId(), 'websites');
+
+            }
+            else {
+                /** @var $store Mage_Core_Model_Store */
+                $store = $this->getPayoneFactory()->getModelCoreStore();
+                $store->load($storeCode, 'code');
+
+
+                if (!$storeCode) {
+                    $methodConfigCollection->getCollectionByScopeIdMerged();
+                }
+                else {
+                    $methodConfigCollection->getCollectionByScopeIdMerged($store->getId(), 'stores');
+                }
+            }
             Mage::register('payone_core_adminhtml_system_config_payment_collection', $methodConfigCollection);
         }
         return Mage::registry('payone_core_adminhtml_system_config_payment_collection');

@@ -33,6 +33,8 @@
 class Payone_Core_Model_Mapper_ApiRequest_Payment_Debit
     extends Payone_Core_Model_Mapper_ApiRequest_Payment_Abstract
 {
+    const EVENT_TYPE = 'debit';
+
     /** @var Mage_Sales_Model_Order_Creditmemo */
     protected $creditmemo = null;
 
@@ -62,11 +64,13 @@ class Payone_Core_Model_Mapper_ApiRequest_Payment_Debit
         $request->setBusiness($business);
 
         /** Set Invoiceing-Parameter only if enabled in Config */
-        if ($this->getConfigPayment()->isInvoiceTransmitEnabled()) {
+        if ($this->mustTransmitInvoiceData()) {
             $invoicing = $this->mapInvoicingParameters();
             $request->setInvoicing($invoicing);
         }
 
+        $this->dispatchEvent($this->getEventName(), array('request' => $request, 'creditmemo' => $this->getCreditmemo()));
+        $this->dispatchEvent($this->getEventPrefix() . '_all', array('request' => $request));
         return $request;
     }
 
@@ -94,10 +98,22 @@ class Payone_Core_Model_Mapper_ApiRequest_Payment_Debit
     protected function mapBusinessParameters()
     {
         $business = new Payone_Api_Request_Parameter_Debit_Business();
-        $business->setSettleaccount('auto');
         $business->setTransactiontype('');
         $business->setBookingDate('');
         $business->setDocumentDate('');
+
+        $paymentMethod = $this->getPaymentMethod();
+
+        // Some payment methods can not use settleaccount auto:
+        if ($paymentMethod instanceof Payone_Core_Model_Payment_Method_SafeInvoice
+                and $paymentMethod->getInfoInstance()->getPayoneSafeInvoiceType() == Payone_Api_Enum_FinancingType::BSV
+        ) {
+            // BillSAFE always settles account:
+            $business->setSettleaccount(Payone_Api_Enum_Settleaccount::YES);
+        }
+        else {
+            $business->setSettleaccount(Payone_Api_Enum_Settleaccount::AUTO);
+        }
 
         return $business;
     }
@@ -110,85 +126,73 @@ class Payone_Core_Model_Mapper_ApiRequest_Payment_Debit
         $order = $this->getOrder();
         $creditmemo = $this->getCreditmemo();
 
-        $creditmemoIncrementId = $creditmemo->getIncrementId();
-        if ($creditmemoIncrementId === null) {
-            $creditmemoIncrementId = $this->fetchNewIncrementId($creditmemo);
-        }
-
-        $appendix = $this->getInvoiceAppendixRefund($creditmemo);
-
         $invoicing = new Payone_Api_Request_Parameter_Invoicing_Transaction();
-        $invoicing->setInvoiceid($creditmemoIncrementId);
-        $invoicing->setInvoiceappendix($appendix);
+        if (!empty($creditmemo) && $creditmemo->hasData()) {
+            $creditmemoIncrementId = $creditmemo->getIncrementId();
+            if ($creditmemoIncrementId === null) {
+                $creditmemoIncrementId = $this->fetchNewIncrementId($creditmemo);
+            }
 
-        // Regular order items:
-        foreach ($creditmemo->getItemsCollection() as $itemData) {
-            /** @var $itemData Mage_Sales_Model_Order_Creditmemo_Item */
-            $params['id'] = $itemData->getSku();
-            $params['de'] = $itemData->getName();
-            $params['no'] = number_format($itemData->getQty(), 0, '.', '');
-            $params['pr'] = $itemData->getPriceInclTax();
+            $appendix = $this->getInvoiceAppendixRefund($creditmemo);
 
-            // We have to load the tax percentage from the order item
-            /** @var $orderItem Mage_Sales_Model_Order_Item */
-            $orderItem = $order->getItemById($itemData->getOrderItemId());
+            $invoicing->setInvoiceid($creditmemoIncrementId);
+            $invoicing->setInvoiceappendix($appendix);
 
-            $params['va'] = number_format($orderItem->getTaxPercent(), 0, '.', '');
+            // Regular order items:
+            foreach ($creditmemo->getItemsCollection() as $itemData) {
+                /** @var $itemData Mage_Sales_Model_Order_Creditmemo_Item */
+                /** @var $orderItem Mage_Sales_Model_Order_Item */
+                $orderItem = $order->getItemById($itemData->getOrderItemId());
 
-            $item = new Payone_Api_Request_Parameter_Invoicing_Item();
-            $item->init($params);
-            $invoicing->addItem($item);
+                if ($orderItem->isDummy()) {
+                    continue; // Do not map dummy items.
+                }
+
+                $number = number_format($itemData->getQty(), 0, '.', '');
+                if ($number <= 0) {
+                    continue; // Do not map items with zero quantity
+                }
+
+                $params['id'] = $itemData->getSku();
+                $params['de'] = $itemData->getName();
+                $params['no'] = $number;
+                $params['pr'] = $itemData->getPriceInclTax();
+
+                if ($this->getPaymentMethod()->mustTransmitInvoicingItemTypes()) {
+                    $params['it'] = Payone_Api_Enum_InvoicingItemType::GOODS;
+                }
+
+
+                // We have to load the tax percentage from the order item
+                $params['va'] = number_format($orderItem->getTaxPercent(), 0, '.', '');
+
+                $item = new Payone_Api_Request_Parameter_Invoicing_Item();
+                $item->init($params);
+                $invoicing->addItem($item);
+            }
+
+            // Refund shipping
+            if ($creditmemo->getShippingInclTax() > 0) {
+                $invoicing->addItem($this->mapRefundShippingAsItemByCreditmemo($creditmemo));
+            }
+
+            // Adjustment Refund (positive adjustment)
+            if ($creditmemo->getAdjustmentPositive() > 0) {
+                $invoicing->addItem($this->mapAdjustmentPositiveAsItemByCreditmemo($creditmemo));
+            }
+
+            // Adjustment Fee (negative adjustment)
+            if ($creditmemo->getAdjustmentNegative() > 0) {
+                $invoicing->addItem($this->mapAdjustmentNegativeAsItemByCreditmemo($creditmemo));
+            }
+
+            // Add Discount as a position
+            $discountAmount = $creditmemo->getDiscountAmount();
+            if ($discountAmount > 0) {
+                $invoicing->addItem($this->mapDiscountAsItem(-1 * $discountAmount));
+            }
         }
-
-        // Refund shipping
-        if ($creditmemo->getShippingInclTax() > 0) {
-            $invoicing->addItem($this->mapRefundShippingAsItemByCreditmemo($creditmemo));
-        }
-
-        // Adjustment Refund (positive adjustment)
-        if($creditmemo->getAdjustmentPositive() > 0) {
-            $invoicing->addItem($this->mapAdjustmentPositiveAsItemByCreditmemo($creditmemo));
-        }
-
-        // Adjustment Fee (negative adjustment)
-        if($creditmemo->getAdjustmentNegative() > 0) {
-            $invoicing->addItem($this->mapAdjustmentNegativeAsItemByCreditmemo($creditmemo));
-        }
-
         return $invoicing;
-    }
-
-    /**
-     * @param Payone_Core_Model_Payment_Method_Abstract $paymentMethod
-     * @return string
-     */
-    protected function mapClearingType(Payone_Core_Model_Payment_Method_Abstract $paymentMethod)
-    {
-        $clearingType = '';
-
-        if ($paymentMethod instanceof Payone_Core_Model_Payment_Method_CashOnDelivery) {
-            $clearingType = Payone_Enum_ClearingType::CASHONDELIVERY;
-        }
-        elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_Creditcard) {
-            $clearingType = Payone_Enum_ClearingType::CREDITCARD;
-        }
-        elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_OnlineBankTransfer) {
-            $clearingType = Payone_Enum_ClearingType::ONLINEBANKTRANSFER;
-        }
-        elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_Wallet) {
-            $clearingType = Payone_Enum_ClearingType::WALLET;
-        }
-        elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_Invoice) {
-            $clearingType = Payone_Enum_ClearingType::INVOICE;
-        }
-        elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_AdvancePayment) {
-            $clearingType = Payone_Enum_ClearingType::ADVANCEPAYMENT;
-        }
-        elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_DebitPayment) {
-            $clearingType = Payone_Enum_ClearingType::DEBITPAYMENT;
-        }
-
-        return $clearingType;
     }
 
     /**
@@ -198,12 +202,9 @@ class Payone_Core_Model_Mapper_ApiRequest_Payment_Debit
     {
         if ($this->creditmemo === null) {
             // we need to check registry because Magento won't give the creditmemo instance to PaymentMethodInstance
-            $creditmemo = Mage::registry('current_creditmemo');
-            if (is_null($creditmemo)) {
-                // fallback to lastInvoice when invoice could not be fetched from Registry
-                $order = $this->getOrder();
-                $creditmemo = $order->getCreditmemosCollection()->getLastItem();
-            }
+            $creditmemo = $this->helperRegistry()
+                               ->registry('current_creditmemo');
+
             $this->creditmemo = $creditmemo;
         }
         return $this->creditmemo;
@@ -217,4 +218,11 @@ class Payone_Core_Model_Mapper_ApiRequest_Payment_Debit
         $this->creditmemo = $creditmemo;
     }
 
+    /**
+     * @return string
+     */
+    public function getEventType()
+    {
+        return self::EVENT_TYPE;
+    }
 }

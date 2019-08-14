@@ -74,6 +74,15 @@ class Payone_Config
     /** @var array */
     protected $config = array();
 
+    /** @var Payone_Api_Config */
+    protected $apiConfig = null;
+
+    /** @var Payone_TransactionStatus_Config */
+    protected $transactionStatusConfig = null;
+
+    /** @var Payone_SessionStatus_Config */
+    protected $sessionStatusConfig = null;
+
     /**
      * @constructor
      *
@@ -82,9 +91,27 @@ class Payone_Config
     public function __construct(array $data = array())
     {
         if (empty($data)) {
+            if($this->getApiConfig() === null)
+            {
+                $this->apiConfig = new Payone_Api_Config();
+            }
+            if($this->getTransactionStatusConfig() === null)
+            {
+                $this->transactionStatusConfig = new Payone_TransactionStatus_Config();
+            }
+            if($this->getSessionStatusConfig() === null)
+            {
+                $this->sessionStatusConfig = new Payone_SessionStatus_Config();
+            }
             $this->config = $this->getDefaultConfigData();
         }
         else {
+            if(array_key_exists('api', $data))
+                $this->setApiConfig($data['api']);
+            if(array_key_exists('transaction_status',$data))
+                $this->setTransactionStatusConfig($data['transaction_status']);
+            if(array_key_exists('session_status',$data))
+                $this->setSessionStatusConfig($data['session_status']);
             $this->config = $data;
         }
     }
@@ -114,49 +141,9 @@ class Payone_Config
     protected function getDefaultConfigData()
     {
         $configData = array(
-            'api' => array(
-                'default' => array(
-                    'validator' => 'Payone_Api_Validator_DefaultParameters',
-                    'protocol' => array(
-                        'filter' => array(
-                            'mask_value' => array(
-                                'enabled' => 1,
-                                'percent' => 100
-                            )
-                        ),
-                        'loggers' => array(
-                            'Payone_Protocol_Logger_Log4php' => array(
-                                'filename' => 'payone_api.log',
-                                'max_file_size' => '1MB',
-                                'max_file_count' => 20
-                            )
-                        ),
-                    ),
-                )
-            ),
-            'transaction_status' => array(
-                'default' => array(
-                    'validators' => array(
-                        'Payone_TransactionStatus_Validator_Ip',
-                        'Payone_TransactionStatus_Validator_DefaultParameters',
-                    ),
-                    'protocol' => array(
-                        'filter' => array(
-                            'mask_value' => array(
-                                'enabled' => 1,
-                                'percent' => 100
-                            )
-                        ),
-                        'loggers' => array(
-                            'Payone_Protocol_Logger_Log4php' => array(
-                                'filename' => 'payone_transactionstatus.log',
-                                'max_file_size' => '1MB',
-                                'max_file_count' => 20
-                            )
-                        ),
-                    ),
-                )
-            )
+            'api' => $this->getApiConfig(),
+            'transaction_status' => $this->getTransactionStatusConfig(),
+            'session_status' => $this->getSessionStatusConfig()
         );
 
         return $configData;
@@ -177,16 +164,12 @@ class Payone_Config
             // Disassemble key, extracting the first node of the string:
             $explodedKey = explode(self::KEY_SEPARATOR, $key);
             $currentKey = array_shift($explodedKey);
+            $newKey = implode(self::KEY_SEPARATOR,$explodedKey);
 
-            // Reassemble shortened key:
-            $newKey = implode(self::KEY_SEPARATOR, $explodedKey);
-            if (FALSE === array_key_exists($currentKey, $tree)) {
-                // Create new array index:
-                $tree[$currentKey] = array();
-            }
-            // Start recursion:
-            return $this->set($newKey, $value, $tree[$currentKey]);
-
+            /** @var $object Payone_Config_Abstract  */
+            $object = $tree[$currentKey];
+            $object->setValue($newKey,$value);
+            return TRUE;
         }
         else {
             // Set value (can overwrite an existing value)
@@ -195,7 +178,6 @@ class Payone_Config
             return TRUE;
         }
     }
-
 
     /**
      * Recursively read from a nested array with a key/path
@@ -218,19 +200,11 @@ class Payone_Config
             // Disassemble key, extracting the first node of the string:
             $explodedKey = explode(self::KEY_SEPARATOR, $key);
             $currentKey = array_shift($explodedKey);
+            $newKey = implode(self::KEY_SEPARATOR,$explodedKey);
 
-            if (array_key_exists($currentKey, $tree)) {
-                // Get the node from the tree:
-                $newTree = $tree[$currentKey];
-
-                // Reassemble key, start recursion:
-                $newKey = implode(self::KEY_SEPARATOR, $explodedKey);
-                return $this->get($newKey, $newTree);
-            }
-            else {
-                return NULL; // Exit recursion, unsuccessful
-            }
-
+            /** @var $object Payone_Config_Abstract */
+            $object = $tree[$currentKey];
+            return $object->getValue($newKey);
         }
         elseif (is_array($tree) and array_key_exists($key, $tree)) {
             return $tree[$key]; // Exit recursion, Success!
@@ -238,5 +212,53 @@ class Payone_Config
         else {
             return NULL; // Exit recursion, unsuccessful
         }
+    }
+
+    /**
+     * @param Payone_Api_Config $apiConfig
+     */
+    public function setApiConfig($apiConfig)
+    {
+        $this->apiConfig = $apiConfig;
+    }
+
+    /**
+     * @return Payone_Api_Config
+     */
+    public function getApiConfig()
+    {
+        return $this->apiConfig;
+    }
+
+    /**
+     * @param Payone_TransactionStatus_Config $transactionStatusConfig
+     */
+    public function setTransactionStatusConfig($transactionStatusConfig)
+    {
+        $this->transactionStatusConfig = $transactionStatusConfig;
+    }
+
+    /**
+     * @return Payone_TransactionStatus_Config
+     */
+    public function getTransactionStatusConfig()
+    {
+        return $this->transactionStatusConfig;
+    }
+
+    /**
+     * @param Payone_SessionStatus_Config $sessionStatusConfig
+     */
+    public function setSessionStatusConfig($sessionStatusConfig)
+    {
+        $this->sessionStatusConfig = $sessionStatusConfig;
+    }
+
+    /**
+     * @return Payone_SessionStatus_Config
+     */
+    public function getSessionStatusConfig()
+    {
+        return $this->sessionStatusConfig;
     }
 }

@@ -45,7 +45,7 @@ class Payone_Migrator_Model_Service_Configuration_PaymentMigrate extends Payone_
 
         // Create array of configs to migrate
         $orderPayments = $this->getOrderPayments();
-        if($orderPayments == null){
+        if ($orderPayments == null) {
             return true;
         }
         $paymentConfigs = $this->preparePaymentConfigsToMigrate($orderPayments->getItems());
@@ -123,37 +123,38 @@ class Payone_Migrator_Model_Service_Configuration_PaymentMigrate extends Payone_
         return $paymentConfigs;
     }
 
+    /**
+     * @param $paymentConfigs
+     * @return array
+     */
     protected function createPaymentConfigurationsByArray($paymentConfigs)
-    {
-        $methodStoreToConfig = array();
-        foreach ($paymentConfigs as $methodCode => $paymentConfigForStore) {
-            $globalConfig = $this->paymentCreateGlobalConfiguration($methodCode);
-            $globalId = $globalConfig->getId();
+        {
+            $methodStoreToConfig = array();
+            foreach ($paymentConfigs as $methodCode => $paymentConfigForStore) {
+                $globalConfig = $this->paymentCreateGlobalConfiguration($methodCode);
+                // child configs on storeView and website scope are automatically created.
 
-            // Create Store Configs
-            foreach ($paymentConfigForStore as $storeId => $paymentConfig) {
-                // Create NEW Website Configuration if needed
-                $websiteConfig = $this->createPaymentConfiguration(
-                    $methodCode, array('parent_default_id' => $globalId), 'websites', $storeId
-                );
+                // Build array of configIds by methodcode/store
+                foreach ($paymentConfigForStore as $storeId => $paymentConfig) {
+                    // Load correct config:
+                    /** @var $collection Payone_Core_Model_Domain_Resource_Config_PaymentMethod_Collection */
+                    $collection = Mage::getModel('payone_core/domain_config_paymentMethod')->getCollection();
+                    $collection->addFieldToFilter('scope', 'stores');
+                    $collection->addFieldToFilter('scope_id', $storeId);
+                    $collection->addFieldToFilter('code', $globalConfig->getCode()); // the newly mapped code
 
-                $websiteId = $websiteConfig->getId();
+                    $storeConfig = $collection->getFirstItem();
 
-                // Create NEW Store Configuration
-                $paymentConfig['parent_websites_id'] = $websiteId;
-                $storeConfig = $this->createPaymentConfiguration(
-                    $methodCode, $paymentConfig, 'stores', $storeId
-                );
-                $configId = $storeConfig->getId();
+                    $storeConfigId = $storeConfig->getId();
 
-                if (!array_key_exists($methodCode, $methodStoreToConfig)) {
-                    $methodStoreToConfig[$methodCode] = array();
+                    if (!array_key_exists($methodCode, $methodStoreToConfig)) {
+                        $methodStoreToConfig[$methodCode] = array();
+                    }
+                    $methodStoreToConfig[$methodCode][$storeId] = $storeConfigId;
                 }
-                $methodStoreToConfig[$methodCode][$storeId] = $configId;
             }
+            return $methodStoreToConfig;
         }
-        return $methodStoreToConfig;
-    }
 
     protected function paymentCreateGlobalConfiguration($methodCode)
     {

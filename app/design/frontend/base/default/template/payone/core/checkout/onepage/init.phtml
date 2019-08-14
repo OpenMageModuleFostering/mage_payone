@@ -23,12 +23,17 @@
 ?>
 <script type="text/javascript">
     //<![CDATA[
-    var payone = new PAYONE.Service.CreditCardCheck();
+    payone = new PAYONE.Service.CreditCardCheck(
+            new PAYONE.Handler.CreditCardCheck.OnepageCheckout()
+    );
 
     Event.observe(window, 'load', function () {
-        payone.wrapPaymentSaveButton();
-        // @todo hs: is another wrap for the checkout section "payment" click required?
-        // might be required if the user jumps back to this step from the review step
+        payone.form = payment.form;
+        payment.save = payment.save.wrap(
+                function (origMethod) {
+                    payone.exec(origMethod);
+                }
+        );
     });
     //]]>
 </script>

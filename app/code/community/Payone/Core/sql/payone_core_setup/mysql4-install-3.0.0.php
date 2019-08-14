@@ -43,7 +43,27 @@ $installer = $this;
 
 $installer->startSetup();
 
-if (version_compare(Mage::getVersion(), '1.6', '<=')) {
+/** @var $helper Payone_Core_Helper_Data */
+$helper = Mage::helper('payone_core');
+
+$magentoEdition = $helper->getMagentoEdition();
+$magentoVersion = $helper->getMagentoVersion();
+
+$useOldStyleInstaller = false;
+switch($magentoEdition)
+{
+    case 'CE' :
+        if(version_compare($magentoVersion, '1.6', '<'))
+            $useOldStyleInstaller = true;
+        break;
+    case 'EE' : // Intentional fallthrough
+    case 'PE' :
+        if(version_compare($magentoVersion, '1.11', '<'))
+            $useOldStyleInstaller = true;
+        break;
+}
+
+if($useOldStyleInstaller) {
     // Use own String for type datetime, to be compatible to Magento 1.5
     $datetime = 'datetime';
 

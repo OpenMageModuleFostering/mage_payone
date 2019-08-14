@@ -103,6 +103,8 @@ class Payone_Core_Adminhtml_System_Config_PaymentController
             $model->setCode($type);
 
             Mage::register('payone_core_config_payment_method', $model);
+            Mage::register('payone_core_config_active_scope', $this->determineActiveScope($website, $store));
+
 
             $this->loadLayout();
 
@@ -171,7 +173,15 @@ class Payone_Core_Adminhtml_System_Config_PaymentController
             $website = $this->getRequest()->getParam('website');
             $store = $this->getRequest()->getParam('store');
             $type = $this->getRequest()->getParam('type');
+
+
             try {
+                if ($this->determineActiveScope($website, $store) != 'default') {
+                   // Deleting payment configs is only allowed in default scope, go back to grid.
+                   $this->_redirect('*/*/index',  array('website' => $website, 'store' => $store));
+                    return;
+                }
+
                 /** @var $model Payone_Core_Model_Domain_Config_PaymentMethod */
                 $model = $this->getModelDomainConfigPaymentMethod();
                 $model->setWebsite($website);
@@ -193,6 +203,22 @@ class Payone_Core_Adminhtml_System_Config_PaymentController
             }
         }
         $this->_redirect('*/*/', array('_current' => true));
+    }
+
+    /**
+     * Determine active scope (not payment config scope, but the scope the admin is currently editing.)
+     *
+     * @param string $website
+     * @param string $store
+     * @return string
+     */
+    protected function determineActiveScope($website = '', $store = '')
+    {
+        if($store)
+            return 'stores';
+        if ($website)
+            return 'websites';
+        return 'default';
     }
 
     /**

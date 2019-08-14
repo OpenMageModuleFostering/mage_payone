@@ -46,6 +46,8 @@ abstract class Payone_Core_Model_Payment_Method_Abstract
     protected $_canUseCheckout = true;
     protected $_canUseForMultishipping = false;
     protected $_isInitializeNeeded = true;
+    protected $_mustTransimitInvoicingData = false;
+    protected $_mustTransimitInvoicingItemTypes = false;
 
     /** @var Payone_Core_Model_Factory */
     protected $factory = null;
@@ -63,17 +65,51 @@ abstract class Payone_Core_Model_Payment_Method_Abstract
     protected $config = null;
 
     /**
+     * override parent method to get the user-configured title, not the one from config.xml
+     *
+     * @return string
+     */
+    public function getTitle()
+    {
+        if ($this->getConfig() instanceof Payone_Core_Model_Config_Payment_Method_Interface) {
+            return $this->getConfig()->getName();
+        }
+        /** @var $session Mage_Checkout_Model_Session */
+        $session = Mage::getSingleton('checkout/session');
+        $quote = $session->getQuote();
+        if (is_null($quote)) {
+            $quote = $this->getInfoInstance()->getQuote();
+        }
+        if ($quote instanceof Mage_Sales_Model_Quote) {
+            return $this->getConfigForQuote($quote)->getName();
+        }
+        $order = $this->getInfoInstance()->getOrder();
+        if ($order instanceof Mage_Sales_Model_Order) {
+            return $this->getConfigByOrder($order)->getName();
+        }
+        // call parent method if no config available
+        return parent::getTitle();
+    }
+
+    /**
      * @param Mage_Sales_Model_Quote $quote
      * @return bool
      */
     public function isAvailable($quote = null)
     {
-        if ($quote === null) {
-            $configPayment = $this->getConfigPayment(null);
-            return $configPayment->isAvailable($this->getMethodType());
+        if (is_null($quote)) {
+            // No quote given, availability check is basic (e.g. method is enabled, not marked as deleted)
+            $configPayment = $this->getConfigPayment();
         }
-        $configPayment = $this->helperConfig()->getConfigPaymentByQuote($quote);
-        return $configPayment->isAvailable($this->getMethodType(), $quote);
+        else {
+            // Quote is given, availability check is detailed (includes store, country settings, min/max quote totals, etc.)
+            $configPayment = $this->helperConfig()->getConfigPaymentByQuote($quote);
+        }
+        $isAvailable = $configPayment->isAvailable($this->getMethodType(), $quote);
+
+        return $this->dispatchPaymentMethodIsActive($isAvailable, $quote);
+
+
     }
 
     /**
@@ -114,6 +150,31 @@ abstract class Payone_Core_Model_Payment_Method_Abstract
     }
 
     /**
+     * @param Varien_Object $payment
+     * @return Mage_Payment_Model_Method_Abstract
+     */
+    public function cancel(Varien_Object $payment)
+    {
+        $status = $payment->getOrder()->getPayoneTransactionStatus();
+
+        if (empty($status) or $status == 'REDIRECT') {
+            return $this; // Don´t send cancel to PAYONE on orders without TxStatus
+        }
+
+        if ($this->getCode() == Payone_Core_Model_System_Config_PaymentMethodCode::CREDITCARD
+            or $this->getCode() == Payone_Core_Model_System_Config_PaymentMethodCode::SAFEINVOICE
+            or $this->getCode() == Payone_Core_Model_System_Config_PaymentMethodCode::FINANCING) {
+            // Capture with amount=0, to notify PAYONE that the order is complete (invoiced/cancelled all items)
+            // Only works with Creditcard at the moment (15.10.2013)
+            $this->helperRegistry()->registerPaymentCancel($this->getInfoInstance());
+            $this->capture($payment, 0.0000);
+        }
+
+
+        return $this;
+    }
+
+    /**
      * Called before initalize to determine action needed
      *
      * @return string
@@ -141,6 +202,9 @@ abstract class Payone_Core_Model_Payment_Method_Abstract
         /** @var $order Mage_Sales_Model_Order */
         $order = $payment->getOrder();
         $configPayment = $this->getConfigByOrder($order);
+
+        // Never send confirmation email, we do it during Tx-Status processing
+        $order->setCanSendNewEmailFlag(false);
 
         // Execute Payment Initialization
         $service = $this->getFactory()->getServiceInitializePayment($configPayment);
@@ -178,6 +242,11 @@ abstract class Payone_Core_Model_Payment_Method_Abstract
         $paymentMethodInstance->setRedirectUrl($this->getRedirectUrl());
     }
 
+    /**
+     * @param Varien_Object $payment
+     * @param float $amount
+     * @return Payone_Core_Model_Payment_Method_Abstract
+     */
     public function capture(Varien_Object $payment, $amount)
     {
         /** @var $payment Mage_Sales_Model_Order_Payment */
@@ -309,7 +378,8 @@ abstract class Payone_Core_Model_Payment_Method_Abstract
         if ($field == 'sort_order') {
             try {
                 $data = $this->getConfigForQuote()->getSortOrder();
-            } catch (Payone_Core_Exception_PaymentMethodConfigNotFound $e) {
+            }
+            catch (Payone_Core_Exception_PaymentMethodConfigNotFound $e) {
                 return 0;
             }
         }
@@ -317,6 +387,60 @@ abstract class Payone_Core_Model_Payment_Method_Abstract
             $data = parent::getConfigData($field, $storeId);
         }
         return $data;
+    }
+
+    /**
+     * Trigger Magento Standard Event, to allow changing of isAvailable() result
+     *
+     * @param bool $isAvailable
+     * @param Mage_Sales_Model_Quote $quote
+     * @return bool
+     */
+    protected function dispatchPaymentMethodIsActive($isAvailable, $quote)
+    {
+        $checkResult = new StdClass;
+        $checkResult->isAvailable = $isAvailable;
+
+        $this->dispatchEvent('payment_method_is_active', array(
+            'result' => $checkResult,
+            'method_instance' => $this,
+            'quote' => $quote,
+        ));
+
+        return $checkResult->isAvailable;
+    }
+
+    /**
+     * Wrapper for Mage::dispatchEvent()
+     *
+     * @param $name
+     * @param array $data
+     *
+     * @return Mage_Core_Model_App
+     */
+    protected function dispatchEvent($name, array $data = array())
+    {
+        return Mage::dispatchEvent($name, $data);
+    }
+
+    /**
+     * Some Payment methods require transmitting of invoicing data, regardless of configuration.
+     *
+     * @return bool
+     */
+    public function mustTransmitInvoicingData()
+    {
+        return $this->_mustTransimitInvoicingData;
+    }
+
+    /**
+     * Some Payment methods require transmitting of invoicing item types.
+     *
+     * @return bool
+     */
+    public function mustTransmitInvoicingItemTypes()
+    {
+        return $this->_mustTransimitInvoicingItemTypes;
     }
 
     /**
@@ -352,6 +476,14 @@ abstract class Payone_Core_Model_Payment_Method_Abstract
     protected function helper()
     {
         return $this->getFactory()->helper();
+    }
+
+    /**
+     * @return Payone_Core_Helper_Registry
+     */
+    protected function helperRegistry()
+    {
+        return $this->getFactory()->helperRegistry();
     }
 
     /**

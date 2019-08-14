@@ -61,6 +61,14 @@ class Payone_Core_Model_Repository_TransactionStatus
 
         /* map request to domain object */
         $data = $request->toArray();
+
+        // UTF-8 encoding, PAYONE sends ISO-encoded TransactionStatus, we want to preserve special characters (e.g. Umlauts in clearing parameters)
+        foreach($data as $key => $value)
+        {
+            $data[$key] = utf8_encode($value);
+        }
+
+
         $domainObject->setData($data);
 
         $domainObject->save();

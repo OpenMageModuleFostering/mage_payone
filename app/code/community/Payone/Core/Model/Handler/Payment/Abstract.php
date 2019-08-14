@@ -140,6 +140,14 @@ abstract class Payone_Core_Model_Handler_Payment_Abstract
             $order->setData('payone_payment_method_type',
                 $this->getPayment()->getData('payone_onlinebanktransfer_type'));
         }
+        elseif ($this->getPaymentMethod() instanceof Payone_Core_Model_Payment_Method_Financing) {
+            $order->setData('payone_payment_method_type',
+                $this->getPayment()->getData('payone_financing_type'));
+        }
+        elseif ($this->getPaymentMethod() instanceof Payone_Core_Model_Payment_Method_SafeInvoice) {
+            $order->setData('payone_payment_method_type',
+                $this->getPayment()->getData('payone_safe_invoice_type'));
+        }
     }
 
     /**
@@ -155,6 +163,7 @@ abstract class Payone_Core_Model_Handler_Payment_Abstract
         if ($paymentMethod instanceof Payone_Core_Model_Payment_Method_AdvancePayment
             or $paymentMethod instanceof Payone_Core_Model_Payment_Method_Invoice
             or $paymentMethod instanceof Payone_Core_Model_Payment_Method_CashOnDelivery
+            or ($paymentMethod instanceof Payone_Core_Model_Payment_Method_SafeInvoice and $response instanceof Payone_Api_Response_Capture_Approved)
         ) {
             /** @var $response Payone_Api_Response_Authorization_Approved */
             $payment->setPayoneClearingBankAccountholder($response->getClearingBankaccountholder());
@@ -165,6 +174,14 @@ abstract class Payone_Core_Model_Handler_Payment_Abstract
             $payment->setPayoneClearingBankBic($response->getClearingBankbic());
             $payment->setPayoneClearingBankCity($response->getClearingBankcity());
             $payment->setPayoneClearingBankName($response->getClearingBankname());
+
+            if($response instanceof Payone_Api_Response_Capture_Approved)
+            {
+                $payment->setPayoneClearingReference($response->getClearingReference());
+                $payment->setPayoneClearingInstructionnote($response->getClearingInstructionnote());
+                $payment->setPayoneClearingLegalnote($response->getClearingLegalnote());
+                $payment->setPayoneClearingDuedate($response->getClearingDuedate());
+            }
         }
     }
 

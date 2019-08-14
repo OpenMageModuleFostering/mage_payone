@@ -34,6 +34,15 @@ class Payone_Api_Factory
     protected $config = null;
 
     /**
+     * @constructor
+     * @param Payone_Api_Config $config
+     */
+    public function __construct(Payone_Api_Config $config = null)
+    {
+        $this->config = $config;
+    }
+
+    /**
      * @return Payone_Api_Adapter_Interface
      */
     protected function buildHttpClient()
@@ -44,7 +53,7 @@ class Payone_Api_Factory
         else {
             $adapter = new Payone_Api_Adapter_Http_Socket();
         }
-        $adapter->setUrl('https://api.pay1.de/post-gateway/'); // @todo hs: Make this configurable
+        $adapter->setUrl('https://api.pay1.de/post-gateway/');
         return $adapter;
     }
 
@@ -80,7 +89,17 @@ class Payone_Api_Factory
     public function buildMapperCurrency()
     {
         $mapper = new Payone_Api_Mapper_Currency();
+        $mapper->setPathToProperties($this->getCurrencyPropertiesPath());
         return $mapper;
+    }
+
+    /**
+     * Returns Path to currency.properties file
+     * @return string
+     */
+    protected function getCurrencyPropertiesPath()
+    {
+        return $this->getConfig()->getValue('default/mapper/currency/currency_properties');
     }
 
     /**
@@ -129,6 +148,36 @@ class Payone_Api_Factory
     public function buildMapperRequestRefund()
     {
         $mapper = new Payone_Api_Mapper_Request_Payment_Refund();
+        $mapper->setMapperCurrency($this->buildMapperCurrency());
+        return $mapper;
+    }
+
+    /**
+     * @return Payone_Api_Mapper_Request_Payment_Vauthorization
+     */
+    public function buildMapperRequestVauthorize()
+    {
+        $mapper = new Payone_Api_Mapper_Request_Payment_Vauthorization();
+        $mapper->setMapperCurrency($this->buildMapperCurrency());
+        return $mapper;
+    }
+
+    /**
+     * @return Payone_Api_Mapper_Request_Payment_CreateAccess
+     */
+    public function buildMapperRequestCreateAccess()
+    {
+        $mapper = new Payone_Api_Mapper_Request_Payment_CreateAccess();
+        $mapper->setMapperCurrency($this->buildMapperCurrency());
+        return $mapper;
+    }
+
+    /**
+     * @return Payone_Api_Mapper_Request_Management_UpdateAccess
+     */
+    public function buildMapperRequestUpdateAccess()
+    {
+        $mapper = new Payone_Api_Mapper_Request_Management_UpdateAccess();
         $mapper->setMapperCurrency($this->buildMapperCurrency());
         return $mapper;
     }
@@ -230,6 +279,51 @@ class Payone_Api_Factory
     protected function buildMapperResponseGetInvoice()
     {
         $mapper = new Payone_Api_Mapper_Response_GetInvoice();
+        return $mapper;
+    }
+
+    /**
+     * @return Payone_Api_Mapper_Response_GetFile
+     */
+    protected function buildMapperResponseGetFile()
+    {
+        $mapper = new Payone_Api_Mapper_Response_GetFile();
+        return $mapper;
+    }
+
+    /**
+     * @return Payone_Api_Mapper_Response_Vauthorization
+     */
+    public function buildMapperResponseVauthorize()
+    {
+        $mapper = new Payone_Api_Mapper_Response_Vauthorization();
+        return $mapper;
+    }
+
+    /**
+     * @return Payone_Api_Mapper_Response_CreateAccess
+     */
+    public function buildMapperResponseCreateAccess()
+    {
+        $mapper = new Payone_Api_Mapper_Response_CreateAccess();
+        return $mapper;
+    }
+
+    /**
+     * @return Payone_Api_Mapper_Response_UpdateAccess
+     */
+    public function buildMapperResponseUpdateAccess()
+    {
+        $mapper = new Payone_Api_Mapper_Response_UpdateAccess();
+        return $mapper;
+    }
+
+    /**
+     * @return Payone_Api_Mapper_Response_ManageMandate
+     */
+    public function buildMapperResponseManageMandate()
+    {
+        $mapper = new Payone_Api_Mapper_Response_ManageMandate();
         return $mapper;
     }
 
@@ -383,6 +477,71 @@ class Payone_Api_Factory
     }
 
     /**
+     * @return Payone_Api_Service_Management_GetFile
+     */
+    public function buildServiceManagementGetFile()
+    {
+        $service = new Payone_Api_Service_Management_GetFile();
+        $service->setAdapter($this->buildHttpClient());
+        $service->setMapperResponse($this->buildMapperResponseGetFile());
+        $service->setValidator($this->buildValidatorDefault());
+        return $service;
+
+    }
+
+    /**
+     * @return Payone_Api_Service_Management_ManageMandate
+     */
+    public function buildServiceManagementManageMandate()
+    {
+        $service = new Payone_Api_Service_Management_ManageMandate();
+        $service->setAdapter($this->buildHttpClient());
+        $service->setMapperResponse($this->buildMapperResponseManageMandate());
+        $service->setValidator($this->buildValidatorDefault());
+        return $service;
+
+    }
+
+    /**
+     * @return Payone_Api_Service_Payment_Vauthorize
+     */
+    public function buildServicePaymentVauthorize()
+    {
+        $service = new Payone_Api_Service_Payment_Vauthorize();
+        $service->setAdapter($this->buildHttpClient());
+        $service->setMapperRequest($this->buildMapperRequestVauthorize());
+        $service->setMapperResponse($this->buildMapperResponseVauthorize());
+        $service->setValidator($this->buildValidatorDefault());
+        return $service;
+    }
+
+    /**
+     * @return Payone_Api_Service_Payment_CreateAccess
+     */
+    public function buildServicePaymentCreateAccess()
+    {
+        $service = new Payone_Api_Service_Payment_CreateAccess();
+        $service->setAdapter($this->buildHttpClient());
+        $service->setMapperRequest($this->buildMapperRequestCreateAccess());
+        $service->setMapperResponse($this->buildMapperResponseCreateAccess());
+        $service->setValidator($this->buildValidatorDefault());
+        return $service;
+    }
+
+    /**
+     * @return Payone_Api_Service_Management_UpdateAccess
+     */
+    public function buildServiceManagementUpdateAccess()
+    {
+        $service = new Payone_Api_Service_Management_UpdateAccess();
+        $service->setAdapter($this->buildHttpClient());
+        $service->setMapperRequest($this->buildMapperRequestUpdateAccess());
+        $service->setMapperResponse($this->buildMapperResponseUpdateAccess());
+        $service->setValidator($this->buildValidatorDefault());
+        return $service;
+    }
+
+    /**
      * @return Payone_Api_Service_ProtocolRequest
      */
     public function buildServiceProtocolRequest()
@@ -400,5 +559,21 @@ class Payone_Api_Factory
         $validator = new Payone_Api_Validator_DefaultParameters();
 
         return $validator;
+    }
+
+    /**
+     * @param Payone_Api_Config $config
+     */
+    public function setConfig($config)
+    {
+        $this->config = $config;
+    }
+
+    /**
+     * @return Payone_Api_Config
+     */
+    public function getConfig()
+    {
+        return $this->config;
     }
 }

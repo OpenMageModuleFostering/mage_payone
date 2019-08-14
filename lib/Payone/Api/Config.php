@@ -28,7 +28,39 @@
  * @license         <http://www.gnu.org/licenses/> GNU General Public License (GPL 3)
  * @link            http://www.noovias.com
  */
-class Payone_Api_Config
+class Payone_Api_Config extends Payone_Config_Abstract
 {
+    /**
+     * @return array
+     */
+    public function getDefaultConfigData()
+    {
+        $defaultConfig = array(
+            'default' => array(
+                'validator' => 'Payone_Api_Validator_DefaultParameters',
+                'protocol' => array(
+                    'filter' => array(
+                        'mask_value' => array(
+                            'enabled' => 1,
+                            'percent' => 100
+                        )
+                    ),
+                    'loggers' => array(
+                        'Payone_Protocol_Logger_Log4php' => array(
+                            'filename' => 'payone_api.log',
+                            'max_file_size' => '1MB',
+                            'max_file_count' => 20
+                        )
+                    ),
+                ),
+                'mapper' => array(
+                    'currency' => array(
+                        'currency_properties' => 'currency.properties'
+                    )
+                )
+            )
+        );
+        return $defaultConfig;
+    }
 
 }

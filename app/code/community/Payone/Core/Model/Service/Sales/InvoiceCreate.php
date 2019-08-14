@@ -96,6 +96,9 @@ class Payone_Core_Model_Service_Sales_InvoiceCreate extends Payone_Core_Model_Se
             $invoice->setIncrementId($invoiceIncrementId);
         }
 
+        $invoice->setTransactionId($order->getPayment()->getLastTransId());
+
+
         if (count($invoice->getAllItems()) <= 0) {
             throw new Payone_Core_Exception_InvoicePreparationNoItems($order->getIncrementId());
         }

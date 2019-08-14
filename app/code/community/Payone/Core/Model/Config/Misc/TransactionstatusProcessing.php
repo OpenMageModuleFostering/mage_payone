@@ -41,6 +41,9 @@ class Payone_Core_Model_Config_Misc_TransactionstatusProcessing
     /** @var array */
     protected $valid_ips = '';
 
+    /** @var int */
+    protected $proxy_mode = 0;
+
     public function init(array $data)
     {
         foreach ($data as $key => $value) {
@@ -101,4 +104,21 @@ class Payone_Core_Model_Config_Misc_TransactionstatusProcessing
     {
         return $this->valid_ips;
     }
+
+    /**
+     * @param int $proxy_mode
+     */
+    public function setProxyMode($proxy_mode)
+    {
+        $this->proxy_mode = $proxy_mode;
+    }
+
+    /**
+     * @return int
+     */
+    public function getProxyMode()
+    {
+        return $this->proxy_mode;
+    }
+
 }

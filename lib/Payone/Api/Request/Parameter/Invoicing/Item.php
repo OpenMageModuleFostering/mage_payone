@@ -49,6 +49,12 @@ class Payone_Api_Request_Parameter_Invoicing_Item
      * @var string
      */
     protected $de = NULL;
+
+    /**
+     * Artikeltyp (Enum)
+     * @var string */
+    protected $it = NULL;
+
     /**
      * @var int
      */
@@ -77,6 +83,7 @@ class Payone_Api_Request_Parameter_Invoicing_Item
         $data['pr[' . $key . ']'] = $this->getPr();
         $data['no[' . $key . ']'] = $this->getNo();
         $data['de[' . $key . ']'] = $this->getDe();
+        $data['it[' . $key . ']'] = $this->getIt();
         $data['va[' . $key . ']'] = $this->getVa();
         $data['sd[' . $key . ']'] = $this->getSd();
         $data['ed[' . $key . ']'] = $this->getEd();
@@ -193,5 +200,21 @@ class Payone_Api_Request_Parameter_Invoicing_Item
     public function getVa()
     {
         return $this->va;
+    }
+
+    /**
+     * @param string $it
+     */
+    public function setIt($it)
+    {
+        $this->it = $it;
+    }
+
+    /**
+     * @return string
+     */
+    public function getIt()
+    {
+        return $this->it;
     }
 }

@@ -125,7 +125,7 @@ class Payone_Core_Model_Config_Payment extends Payone_Core_Model_Config_AreaAbst
     public function getMethodsForQuote($type, Mage_Sales_Model_Quote $quote)
     {
         $country = $quote->getBillingAddress()->getCountry();
-        $quoteTotal = $quote->getSubtotal();
+        $quoteTotal = $quote->getGrandTotal();
 
         $methodsForCountry = $this->getMethodsForCountry($type, $country);
 
@@ -212,6 +212,9 @@ class Payone_Core_Model_Config_Payment extends Payone_Core_Model_Config_AreaAbst
         return $methods;
     }
 
+    /**
+     * @return array
+     */
     public function getAllMethods()
     {
         return $this->methods;

@@ -96,4 +96,13 @@ abstract class Payone_Core_Model_Service_Abstract
     {
         return $this->getFactory()->helperConfig();
     }
+
+
+    /**
+     * @return Payone_Core_Helper_Registry
+     */
+    protected function helperRegistry()
+    {
+        return $this->getFactory()->helperRegistry();
+    }
 }

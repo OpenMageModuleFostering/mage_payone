@@ -23,7 +23,7 @@
 
 /** @var $this Payone_Core_Block_Payment_Method_Form_Wallet */
 $code = $this->getMethodCode();
-$paymentConfigId = $this->getInfoData('payone_config_payment_method_id');
+$paymentConfigId = $this->getPaymentMethodConfigId();
 $paymentType = '';
 ?>
 <fieldset class="form-list">
@@ -33,7 +33,7 @@ $paymentType = '';
             <div class="input-box">
                 <label for="<?php echo $code; ?>_wlt_type">
                     <?php echo $this->__('Wallet Type'); ?>&nbsp;<span class="required">*</span>
-                </label><br/>
+                </label><br class="clear"/>
 
                 <?php
                 $types = $this->getTypes();

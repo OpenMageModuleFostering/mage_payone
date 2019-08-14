@@ -58,8 +58,10 @@ class Payone_Core_Block_Payment_Method_Info_Abstract
                 $quote = $paymentInfo->getQuote();
                 $config = $this->helperConfig()->getConfigPaymentMethodByQuote($quote);
             }
-            else {
-                throw new Payone_Core_Exception_PaymentMethodConfigNotFound();
+            if(empty($config))
+            {
+                $message = 'Payment method configuration not found.';
+                throw new Payone_Core_Exception_PaymentMethodConfigNotFound($message);
             }
             $this->paymentConfig = $config;
         }
@@ -71,7 +73,8 @@ class Payone_Core_Block_Payment_Method_Info_Abstract
      */
     public function getMethodTitle()
     {
-        return $this->getPaymentConfig()->getName();
+        $paymentconfig = $this->getPaymentConfig();
+        return $paymentconfig->getName();
     }
 
     /**

@@ -38,6 +38,11 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Abstract
     const DEFAULT_ADJUSTMENT_POSITIVE_SKU = 'Adjustment Refund';
     const DEFAULT_ADJUSTMENT_NEGATIVE_SKU = 'Adjustment Fee';
 
+    const DEFAULT_DISCOUNT_SKU = 'Discount';
+    const DEFAULT_TAX_SKU = 'Tax';
+
+    const EVENT_PREFIX = 'payone_core_mapper_apirequest_payment';
+
     /** @var float */
     protected $amount = 0.00;
 
@@ -52,6 +57,11 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Abstract
 
     /** @var Payone_Core_Model_Config_Misc */
     protected $configMisc = null;
+
+    /**
+     * @return string
+     */
+    abstract public function getEventType();
 
     /**
      * @param Mage_Sales_Model_Order_Payment $payment
@@ -84,6 +94,7 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Abstract
         $request->setSolutionName($solutionName);
         $request->setSolutionVersion($solutionVersion);
     }
+
     /**
      * @return Payone_Api_Request_Parameter_Invoicing_Item
      */
@@ -102,6 +113,40 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Abstract
         $params['pr'] = $order->getShippingInclTax();
         $params['va'] = $this->getShippingTaxRate();
 
+        if ($this->getPaymentMethod()->mustTransmitInvoicingItemTypes()) {
+            $params['it'] = Payone_Api_Enum_InvoicingItemType::SHIPMENT;
+        }
+
+        $item = new Payone_Api_Request_Parameter_Invoicing_Item();
+        $item->init($params);
+
+        return $item;
+    }
+
+    /**
+     * @param float $discountAmount
+     * @return Payone_Api_Request_Parameter_Invoicing_Item
+     */
+    protected function mapDiscountAsItem($discountAmount)
+    {
+        $configMiscDiscount = $this->getConfigMisc()->getDiscount();
+        $sku = $configMiscDiscount->getSku();
+        $description = $configMiscDiscount->getDescription();
+        if (empty($sku)) {
+            $sku = $this->helper()->__(self::DEFAULT_DISCOUNT_SKU);
+        }
+        if (empty($description)) {
+            $description = $this->helper()->__(self::DEFAULT_DISCOUNT_SKU);
+        }
+
+        $params['id'] = $sku;
+        $params['de'] = $description;
+        $params['no'] = 1;
+        $params['pr'] = $discountAmount;
+
+        if ($this->getPaymentMethod()->mustTransmitInvoicingItemTypes()) {
+            $params['it'] = Payone_Api_Enum_InvoicingItemType::VOUCHER;
+        }
         $item = new Payone_Api_Request_Parameter_Invoicing_Item();
         $item->init($params);
 
@@ -128,6 +173,9 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Abstract
         $params['de'] = $order->getShippingDescription();
         $params['no'] = 1;
         $params['pr'] = $creditmemo->getShippingInclTax();
+        if ($this->getPaymentMethod()->mustTransmitInvoicingItemTypes()) {
+            $params['it'] = Payone_Api_Enum_InvoicingItemType::SHIPMENT;
+        }
 
         $item = new Payone_Api_Request_Parameter_Invoicing_Item();
         $item->init($params);
@@ -157,6 +205,9 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Abstract
         $params['de'] = $name;
         $params['no'] = 1;
         $params['pr'] = $creditmemo->getAdjustmentPositive();
+        if ($this->getPaymentMethod()->mustTransmitInvoicingItemTypes()) {
+            $params['it'] = Payone_Api_Enum_InvoicingItemType::VOUCHER;
+        }
 
         $item = new Payone_Api_Request_Parameter_Invoicing_Item();
         $item->init($params);
@@ -187,6 +238,9 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Abstract
         $params['de'] = $name;
         $params['no'] = 1;
         $params['pr'] = $creditmemo->getAdjustmentNegative() * (-1);
+        if ($this->getPaymentMethod()->mustTransmitInvoicingItemTypes()) {
+            $params['it'] = Payone_Api_Enum_InvoicingItemType::GOODS;
+        }
 
         $item = new Payone_Api_Request_Parameter_Invoicing_Item();
         $item->init($params);
@@ -291,6 +345,24 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Abstract
         return $appendix;
     }
 
+
+    /**
+     * @return bool
+     */
+    protected function mustTransmitInvoiceData()
+    {
+        if ($this->getConfigPayment()->isInvoiceTransmitEnabled()) {
+            return true;
+        }
+
+        $paymentMethod = $this->getPaymentMethod();
+        if ($paymentMethod->mustTransmitInvoicingData()) { // Certain payment methods require invoicing data to be transmitted ALWAYS.
+            return true;
+        }
+
+        return false;
+    }
+
     /**
      * @param Mage_Sales_Model_Abstract $object
      * @return string
@@ -335,8 +407,7 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Abstract
      */
     protected function getConfigMisc()
     {
-        if($this->configMisc === null)
-        {
+        if ($this->configMisc === null) {
             $this->configMisc = $this->helperConfig()->getConfigMisc($this->getStoreId());
         }
         return $this->configMisc;
@@ -365,6 +436,18 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Abstract
     protected function getStoreId()
     {
         return $this->getPaymentMethod()->getStore();
+    }
+
+    /**
+     * @param $storeId
+     * @return Payone_Core_Model_Config_General
+     */
+    protected function getConfigGeneral($storeId = null)
+    {
+        if (is_null($storeId)) {
+            $storeId = $this->getStoreId();
+        }
+        return $this->helperConfig()->getConfigGeneral($storeId);
     }
 
     /**
@@ -421,5 +504,39 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Abstract
     protected function helperConfig()
     {
         return $this->getFactory()->helperConfig();
+    }
+
+    /**
+     * @return Payone_Core_Helper_Registry
+     */
+    protected function helperRegistry()
+    {
+        return $this->getFactory()->helperRegistry();
+    }
+
+    protected function getEventPrefix()
+    {
+        return self::EVENT_PREFIX;
+    }
+
+    /**
+     * @return string
+     */
+    protected function getEventName()
+    {
+        return $this->getEventPrefix() . '_' . $this->getEventType();
+    }
+
+    /**
+     * Wrapper for Mage::dispatchEvent()
+     *
+     * @param $name
+     * @param array $data
+     *
+     * @return Mage_Core_Model_App
+     */
+    protected function dispatchEvent($name, array $data = array())
+    {
+        return Mage::dispatchEvent($name, $data);
     }
 }

@@ -60,14 +60,33 @@ class Payone_Core_Block_Adminhtml_System_Config_Form_Payment_Method
 
         /** @var $model Payone_Core_Model_Domain_Config_PaymentMethod */
         $model = Mage::registry('payone_core_config_payment_method');
+        $parentModel = $model->getParentModel();
 
-        $rootModel = $model->getParentModel();
-        if ($rootModel) {
-            foreach ($rootModel->getData() as $key => $value) {
-                if (isset($value)) {
-                    $path = self::SECTION_PAYONE_PAYMENT . '/' . self::GROUP_TEMPLATE_PREFIX . $this->getMethodType() . '/' . $key;
+        if ($parentModel) {
+            $grandParentModel = $parentModel->getParentModel();
+
+            foreach ($parentModel->getData() as $key => $parentValue)
+            {
+                $path = self::SECTION_PAYONE_PAYMENT . '/' . self::GROUP_TEMPLATE_PREFIX . $this->getMethodType() . '/' . $key;
+                $modelValue = $model->getData($key);
+
+                if (isset($modelValue)) {
+                    $value = $modelValue;
+                }
+                elseif (isset($parentValue)) {
+                    $value = $parentValue;
+                }
+                elseif ($grandParentModel) {
+                    $value = $grandParentModel->getData($key);
+                }
+
+                if(isset($value))
+                {
+                    if(is_array($value))
+                        $value = serialize($value);
                     $this->_configRoot->setNode($path, $value, true);
                 }
+
             }
         }
 
@@ -162,7 +181,14 @@ class Payone_Core_Block_Adminhtml_System_Config_Form_Payment_Method
 
         foreach ($groupDefault->fields as $elements) {
             foreach ($elements as $e) {
-                $group->fields->appendChild($e);
+                // Check if the node already exists. If it does, do not append, default is lower in the hierarchy.
+                $name= $e->getName();
+                /** @var $e Mage_Core_Model_Config_Element */
+                /** @var $configElement Mage_Core_Model_Config_Element */
+                $configElement = $group->fields->$name;
+                if( empty($configElement)
+                    || !$configElement->hasChildren())
+                        $group->fields->appendChild($e);
             }
         }
 

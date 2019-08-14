@@ -78,11 +78,24 @@ class Payone_Core_TransactionStatusController extends Payone_Core_Controller_Abs
             // Send Confirmation Message
             $this->getResponse()->setBody($response->getStatus());
         }
-        catch (Exception $e) {
-            $msg = $e->getMessage();
+        catch( Payone_TransactionStatus_Exception_Validation $e)
+        {
+            // Throw generic error.
+            $type = get_class($e);
+            $message = 'ERROR='.$type;
+
+            $this->getResponse()->setBody($message);
+        }
+        catch (Exception $e)
+        {
             $type = get_class($e);
 
-            Mage::throwException($type . ' : ' . $msg);
+            $message = 'ERROR='.$type.'|MESSAGE='.$e->getMessage();
+
+            // Send Confirmation Message
+            $this->getResponse()->setBody($message);
+
+            Mage::logException($e);
         }
     }
 

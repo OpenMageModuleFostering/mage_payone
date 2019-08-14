@@ -21,7 +21,7 @@
  * @link            http://www.noovias.com
  */
 -->
-<layout version="3.0.10">
+<layout>
 
     <!-- Wizard -->
     <payone_migrator_adminhtml_migration_index>

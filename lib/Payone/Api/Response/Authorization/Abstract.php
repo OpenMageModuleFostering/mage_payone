@@ -30,7 +30,8 @@
  * @license         <http://www.gnu.org/licenses/> GNU General Public License (GPL 3)
  * @link            http://www.noovias.com
  */
-abstract class Payone_Api_Response_Authorization_Abstract extends Payone_Api_Response_Abstract
+abstract class Payone_Api_Response_Authorization_Abstract
+    extends Payone_Api_Response_Abstract
 {
     /**
      * @var int
@@ -76,6 +77,12 @@ abstract class Payone_Api_Response_Authorization_Abstract extends Payone_Api_Res
      * @var string
      */
     protected $clearing_bankname = NULL;
+
+    /**
+     * @var string
+     */
+    protected $mandate_identification = NULL;
+
 
     /**
      * @param string $clearing_bankaccount
@@ -251,5 +258,21 @@ abstract class Payone_Api_Response_Authorization_Abstract extends Payone_Api_Res
     public function getUserid()
     {
         return $this->userid;
+    }
+
+    /**
+     * @param string $mandateIdentification
+     */
+    public function setMandateIdentification($mandateIdentification)
+    {
+        $this->mandate_identification = $mandateIdentification;
+    }
+
+    /**
+     * @return string
+     */
+    public function getMandateIdentification()
+    {
+        return $this->mandate_identification;
     }
 }

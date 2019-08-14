@@ -20,10 +20,16 @@
  * @license         <http://www.gnu.org/licenses/> GNU General Public License (GPL 3)
  * @link            http://www.noovias.com
  */
+
+/** @var $this Mage_Adminhtml_Block_Template */
+$link = Mage::helper('payone_core')->__('PAYONE > General');
+$url = $this->getUrl('adminhtml/system_config/edit', array('section' => 'payone_general'));
 ?>
 <div class="field-name">Gutschrift</div>
 <div class="field-description">
     Hier können Sie einstellen welche Artikelnummer und welchen Namen die Berichtigungserstattung bzw. der Berichtigungszuschlag<br>
     bei der Übertragung von Rechnungsinformationen bekommen.<br>
+    Um diese Optionen nutzen zu können ist eine Beauftragung des Moduls Invoicing bei PAYONE notwendig.<br>
+    Die Einstellung "Rechnungsinformationen versenden" im Bereich "<a href="<?php echo $this->escapeHtml($url) ?>"><?php echo $link ?></a>" muss auf "Ja" gestellt sein.<br>
 </div>
 <br>
