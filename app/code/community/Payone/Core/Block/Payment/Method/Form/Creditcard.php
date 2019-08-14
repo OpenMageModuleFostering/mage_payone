@@ -36,6 +36,7 @@ class Payone_Core_Block_Payment_Method_Form_Creditcard
     
     protected $_aHostedParams = null;
     protected $hasTypes = true;
+    protected $_aTranslations = null;
 
     protected function _construct()
     {
@@ -55,6 +56,7 @@ class Payone_Core_Block_Payment_Method_Form_Creditcard
             $address = $quote->getBillingAddress();
             $billingName = $address->getFirstname() . ' ' . $address->getLastname();
         }
+
         return $billingName;
     }
 
@@ -72,6 +74,7 @@ class Payone_Core_Block_Payment_Method_Form_Creditcard
         foreach ($this->getTypes() as $key => $type) {
             $return[$key] = $type['check_cvc'];
         }
+
         return json_encode($return);
     }
 
@@ -92,6 +95,7 @@ class Payone_Core_Block_Payment_Method_Form_Creditcard
         if(empty($creditCardType)) {
             $creditCardType = $this->getInfoData('cc_type');
         }
+
         return $creditCardType;
     }
 
@@ -122,6 +126,7 @@ class Payone_Core_Block_Payment_Method_Form_Creditcard
         if(empty($ccExpYear)) {
             $ccExpYear = $this->getInfoData('cc_exp_year');
         }
+
         return $ccExpYear;
     }
 
@@ -134,6 +139,7 @@ class Payone_Core_Block_Payment_Method_Form_Creditcard
         if(empty($ccExpMonth)) {
             $ccExpMonth = $this->getInfoData('cc_exp_month');
         }
+
         return $ccExpMonth;
     }
 
@@ -154,6 +160,56 @@ class Payone_Core_Block_Payment_Method_Form_Creditcard
         return '';
     }
     
+    public function getDisplayCvcConfig()
+    {
+        $sShowCvc = '';
+        foreach ($this->getTypes() as $key => $type) {
+            $sShowCvc = $type['check_cvc'];
+        }
+
+        return $sShowCvc;
+    }
+    
+    public function showCvcInput()
+    {
+        $sDisplayCvc = $this->getDisplayCvcConfig();
+        if($sDisplayCvc == 'always' || ($sDisplayCvc == 'only_first' && $this->getPayoneCreditCardCheckValidation() == '1')) {
+            return true;
+        }
+
+        return false;
+    }
+    
+    public function _getShopLanguage()
+    {
+        $sLangCode = Mage::app()->getLocale()->getLocaleCode();
+        return substr($sLangCode, 0, 2);
+    }
+    
+    public function getTranslations()
+    {
+        if($this->_aTranslations === null) {
+            $this->_aTranslations = array();
+            $sLang = $this->_getShopLanguage();
+            $aTranslations = $this->getConfigGeneral()->getCcHostedTranslations()->getAllCcTranslations();
+            if(isset($aTranslations[$sLang])) {
+                $this->_aTranslations = $aTranslations[$sLang];
+            }
+        }
+
+        return $this->_aTranslations;
+    }
+    
+    public function getTranslationLanguage()
+    {
+        $aTranslations = $this->getTranslations();
+        if(count($aTranslations) > 0) {
+            return $this->_getShopLanguage();
+        }
+
+        return false;
+    }
+    
     /**
      * @return integer
      */
@@ -166,6 +222,7 @@ class Payone_Core_Block_Payment_Method_Form_Creditcard
         if(empty($sEnc) || empty($sType) || empty($sYear) || empty($sMonth)) {
             return 1;
         }
+
         return 0;
     }
 
@@ -182,6 +239,7 @@ class Payone_Core_Block_Payment_Method_Form_Creditcard
             $months = array_merge($months, $this->getMagentoPaymentConfig()->getMonths());
             $this->setData('cc_months', $months);
         }
+
         return $months;
     }
 
@@ -198,6 +256,7 @@ class Payone_Core_Block_Payment_Method_Form_Creditcard
             $years = array(0 => $this->__('Year')) + $years;
             $this->setData('cc_years', $years);
         }
+
         return $years;
     }
 
@@ -273,6 +332,7 @@ class Payone_Core_Block_Payment_Method_Form_Creditcard
 
             $gateways[$paymentConfig->getId()] = $params;
         }
+
         return $gateways;
     }
 
@@ -306,11 +366,13 @@ class Payone_Core_Block_Payment_Method_Form_Creditcard
         return '';
     }
     
-    public function getCCRequestType() {
+    public function getCCRequestType() 
+    {
         return $this->getConfigGeneral()->getPaymentCreditcard()->getCcRequestType();
     }
     
-    protected function _getHostedParams() {
+    protected function _getHostedParams() 
+    {
         if($this->_aHostedParams === null) {
             $aParams = array();
             
@@ -318,16 +380,20 @@ class Payone_Core_Block_Payment_Method_Form_Creditcard
             if($sTemplate) {
                 $aParams = unserialize($sTemplate);
             }
+
             $this->_aHostedParams = $aParams;
         }
+
         return $this->_aHostedParams;
     }
     
-    public function getHostedParam($sParam) {
+    public function getHostedParam($sParam) 
+    {
         $aParams = $this->_getHostedParams();
         if(isset($aParams[$sParam])) {
             return $aParams[$sParam];
         }
+
         return '';
     }
     
@@ -389,6 +455,7 @@ class Payone_Core_Block_Payment_Method_Form_Creditcard
 
             $gateways[$paymentConfig->getId()] = $params;
         }
+
         return $gateways;
     }
     

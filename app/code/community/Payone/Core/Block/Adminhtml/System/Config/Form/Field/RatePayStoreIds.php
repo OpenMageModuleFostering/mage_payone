@@ -28,40 +28,55 @@ class Payone_Core_Block_Adminhtml_System_Config_Form_Field_RatePayStoreIds
 
     protected $_oRatePay = null;
     
-    public function __construct() {
+    public function __construct() 
+    {
         parent::__construct();
         $this->setTemplate('payone/core/system/config/form/field/ratepay_shopids.phtml');
     }
 
     protected function _prepareToRender()
     {
-        $this->addColumn('ratepay_shopid', array(
+        $this->addColumn(
+            'ratepay_shopid', array(
             'label' => Mage::helper('payone_core')->__('Shop-ID'),
             'style' => 'width:60px;',
-        ));
-        $this->addColumn('ratepay_currency', array(
+            )
+        );
+        $this->addColumn(
+            'ratepay_currency', array(
             'label' => Mage::helper('payone_core')->__('Currency'),
             'style' => 'width:60px;',
-        ));
+            )
+        );
         $this->_addAfter = false;
         $this->_addButtonLabel = Mage::helper('payone_core')->__('Add Shop-ID');
         parent::_prepareToRender();
     }
     
-    protected function _getRatePayObject() {
+    protected function _getRatePayObject() 
+    {
         if($this->_oRatePay === null) {
             $this->_oRatePay = Mage::getModel('payone_core/payment_method_ratepay');
         }
+
         return $this->_oRatePay;
     }
-    
-    protected function _requestRatePayConfigFromApi($sRatePayShopId, $sCurrency) {
+
+    /**
+     * @param $sRatePayShopId
+     * @param $sCurrency
+     * @return bool|Payone_Api_Request_Parameter_Paydata_Paydata
+     * @throws Exception
+     */
+    protected function _requestRatePayConfigFromApi($sRatePayShopId, $sCurrency) 
+    {
         $sMethodId = $this->getRequest()->get('id');
         $oConfigHelper = $this->getFactory()->helperConfig();
         $oConfig = $oConfigHelper->getConfigPaymentMethodById($sMethodId);
         $oService = $this->getFactory()->getServicePaymentGenericpayment($oConfig);
         $oMapper = $oService->getMapper();
         $oRequest = $oMapper->addRatePayParameters($sRatePayShopId, $sCurrency);
+
         $oResponse = $this->getFactory()->getServiceApiPaymentGenericpayment()->request($oRequest);
 
         if($oResponse instanceof Payone_Api_Response_Genericpayment_Ok) {
@@ -72,16 +87,24 @@ class Payone_Core_Block_Adminhtml_System_Config_Form_Field_RatePayStoreIds
             $oRatePay->addRatePayConfig($aPayData);
             return $aPayData;
         }
+
         return false;
     }
-    
-    public function getRatePayShopConfig($sRatePayShopId, $sCurrency) {
+
+    /**
+     * @param $sRatePayShopId
+     * @param $sCurrency
+     * @return bool|mixed|Payone_Api_Request_Parameter_Paydata_Paydata
+     */
+    public function getRatePayShopConfig($sRatePayShopId, $sCurrency) 
+    {
         $sRatePayShopId = trim($sRatePayShopId);
         $oRatePay = $this->_getRatePayObject();
         $aRatePayConfig = $oRatePay->getRatePayConfigById($sRatePayShopId);
         if(!$aRatePayConfig) {
             $aRatePayConfig = $this->_requestRatePayConfigFromApi($sRatePayShopId, $sCurrency);
         }
+
         return $aRatePayConfig;
     }
 

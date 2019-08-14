@@ -88,6 +88,7 @@ class Payone_Core_Block_Adminhtml_System_Config_Form_Field_Abstract
         if (empty($this->_columns[$columnName])) {
             throw new Exception('Wrong column name specified.');
         }
+
         $column = $this->_columns[$columnName];
         $inputName = $this->getElement()->getName() . '[#{_id}][' . $columnName . '][]';
 
@@ -105,7 +106,8 @@ class Payone_Core_Block_Adminhtml_System_Config_Form_Field_Abstract
         $html = '<select name="' . $inputName . $definition . (isset($column['style']) ? ' style="' . $column['style'] . '"' : '') . ' >';
         foreach ($values as $key => $option) {
             if (!is_array($option)) {
-                $html .= $this->_optionToHtml(array(
+                $html .= $this->_optionToHtml(
+                    array(
                         'value' => $key,
                         'label' => $option)
                 );
@@ -115,6 +117,7 @@ class Payone_Core_Block_Adminhtml_System_Config_Form_Field_Abstract
                 foreach ($option['value'] as $groupItem) {
                     $html .= $this->_optionToHtml($groupItem);
                 }
+
                 $html .= '</optgroup>';
             }
             else {
@@ -134,6 +137,7 @@ class Payone_Core_Block_Adminhtml_System_Config_Form_Field_Abstract
             foreach ($option['value'] as $groupItem) {
                 $html .= $this->_optionToHtml($groupItem);
             }
+
             $html .= '</optgroup>';
         }
         else {
@@ -142,6 +146,7 @@ class Payone_Core_Block_Adminhtml_System_Config_Form_Field_Abstract
 //            $html .= isset($option['style']) ? 'style="' . $option['style'] . '"' : '';
             $html .= '>' . ($option['label']) . '</option>';
         }
+
         return $html;
     }
 
@@ -153,7 +158,35 @@ class Payone_Core_Block_Adminhtml_System_Config_Form_Field_Abstract
         if (null === $this->factory) {
             $this->factory = new Payone_Core_Model_Factory();
         }
+
         return $this->factory;
     }
 
+    protected function _getFormattedLanguageTitle($sTitle)
+    {
+        $iPos = strpos($sTitle, "(");
+        if($iPos) {
+            $sTitle = substr($sTitle, 0, $iPos);
+        }
+
+        return trim($sTitle);
+    }
+    
+    protected function _getFormattedLanguageOptions($aOptions)
+    {
+        $aReturn = array();
+        $aAddedLanguages = array();
+        foreach ($aOptions as $aOption) {
+            $sLang = substr($aOption['value'], 0, 2);
+            if(array_search($sLang, $aAddedLanguages) === false) {
+                $aOption['value'] = $sLang;
+                $aOption['label'] = $this->_getFormattedLanguageTitle($aOption['label']);
+                $aReturn[] = $aOption;
+                $aAddedLanguages[] = $sLang;
+            }
+        }
+
+        return $aReturn;
+    }
+    
 }

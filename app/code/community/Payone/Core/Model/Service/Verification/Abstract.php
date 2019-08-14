@@ -78,6 +78,7 @@ abstract class Payone_Core_Model_Service_Verification_Abstract
         if (empty($customerAddressId)) {
             return false;
         }
+
         $customerAddress = $this->getFactory()->getModelCustomerAddress();
         $customerAddress->load($customerAddressId);
 
@@ -118,4 +119,30 @@ abstract class Payone_Core_Model_Service_Verification_Abstract
         $address->setData($this->prefix . '_score', $savedScore);
         return $savedScore;
     }
+    
+
+    /**
+     * @param Mage_Sales_Model_Quote $quote
+     * @return bool
+     */
+    protected function isRequiredForQuote(Mage_Sales_Model_Quote $quote)
+    {
+        $config = $this->getConfig();
+        $quoteTotal = $quote->getSubtotal();
+
+        /** @var $method Payone_Core_Model_Config_Payment_Method_Interface */
+        $maxOrderTotal = $config->getMaxOrderTotal();
+        $minOrderTotal = $config->getMinOrderTotal();
+
+        if (!empty($maxOrderTotal) and $maxOrderTotal < $quoteTotal) {
+            return false; // quote total too high.
+        }
+
+        if (!empty($minOrderTotal) and $minOrderTotal > $quoteTotal) {
+            return false; // quote total is too low.
+        }
+
+        return true;
+    }
+    
 }

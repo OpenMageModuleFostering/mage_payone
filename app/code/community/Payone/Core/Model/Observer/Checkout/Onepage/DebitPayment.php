@@ -53,9 +53,10 @@ class Payone_Core_Model_Observer_Checkout_Onepage_DebitPayment extends Payone_Co
         $selectedMethod = $paymentData['method'];
 
         if ($selectedMethod != Payone_Core_Model_System_Config_PaymentMethodCode::DEBITPAYMENT && 
-            $selectedMethod != Payone_Core_Model_System_Config_PaymentMethodCode::PAYOLUTION
+            $selectedMethod != Payone_Core_Model_System_Config_PaymentMethodCode::PAYOLUTION &&
+            $selectedMethod != Payone_Core_Model_System_Config_PaymentMethodCode::CREDITCARD
             ) {
-            return; // only active for payone_debit_payment
+            return;
         }
 
         if (!$controllerAction instanceof Payone_Core_Checkout_OnepageController) {
@@ -76,7 +77,10 @@ class Payone_Core_Model_Observer_Checkout_Onepage_DebitPayment extends Payone_Co
             $controllerAction = $this->_performDebitChecks($controllerAction);
         } elseif($selectedMethod == Payone_Core_Model_System_Config_PaymentMethodCode::PAYOLUTION) {
             $controllerAction = $this->_performPayolutionChecks($controllerAction);
+        } elseif($selectedMethod == Payone_Core_Model_System_Config_PaymentMethodCode::CREDITCARD) {
+            $controllerAction = $this->_performHostedCreditcardChecks($controllerAction);
         }
+
         return $controllerAction;
     }
     
@@ -90,7 +94,13 @@ class Payone_Core_Model_Observer_Checkout_Onepage_DebitPayment extends Payone_Co
         if ((!$sepaMandateEnabled and $checkBankaccountEnabled)
                 or ($sepaMandateEnabled and $checkBankaccountEnabled and $bankaccountcheckType == Payone_Api_Enum_BankaccountCheckType::POS_BLACKLIST)
         ) {
-            $this->performBankaccountCheck();
+            try {
+                $this->performBankaccountCheck();
+            } catch(Exception $oEx) {
+                $controllerAction->setFlag('', Mage_Core_Controller_Varien_Action::FLAG_NO_DISPATCH, true);
+                $jsonResponse = array('error' => Mage::helper('payone_core')->__($oEx->getMessage()));
+                return $controllerAction->getResponse()->setBody(Mage::helper('core')->jsonEncode($jsonResponse));
+            }
         }
 
         if ($sepaMandateEnabled) {
@@ -105,20 +115,59 @@ class Payone_Core_Model_Observer_Checkout_Onepage_DebitPayment extends Payone_Co
     
     protected function _performPayolutionChecks($controllerAction)
     {
-        $oQuote = $this->getQuote();
-        
-        $oService = $this->getFactory()->getServicePaymentGenericpayment($this->getPaymentConfig());
-        $oMapper = $oService->getMapper();
-        $oRequest = $oMapper->addPayolutionPreCheckParameters($oQuote, $this->getPaymentData());
-        $oResponse = $this->getFactory()->getServiceApiPaymentGenericpayment()->request($oRequest);
-        
-        if($oResponse instanceof Payone_Api_Response_Error) {
-            $controllerAction->setFlag('', Mage_Core_Controller_Varien_Action::FLAG_NO_DISPATCH, true);
-            $jsonResponse = array('error' => Mage::helper('payone_core')->__($oResponse->getErrormessage()));
-            return $controllerAction->getResponse()->setBody(Mage::helper('core')->jsonEncode($jsonResponse));
-        } elseif($oResponse instanceof Payone_Api_Response_Genericpayment_Ok) {
-            $checkoutSession = $this->getFactory()->getSingletonCheckoutSession();
-            $checkoutSession->setPayoneWorkorderId($oResponse->getWorkorderId());
+        $aPaymentData = $this->getPaymentData();
+        if(isset($aPaymentData['payone_payolution_type']) && $aPaymentData['payone_payolution_type'] != 'PYS') {// pre_check for installment is done earlier by ajax
+            $oService = $this->getFactory()->getServicePaymentGenericpayment($this->getPaymentConfig());
+            $oMapper = $oService->getMapper();
+            $oRequest = $oMapper->addPayolutionPreCheckParameters($this->getQuote(), $aPaymentData);
+            $oResponse = $this->getFactory()->getServiceApiPaymentGenericpayment()->request($oRequest);
+
+            if($oResponse instanceof Payone_Api_Response_Error) {
+                $controllerAction->setFlag('', Mage_Core_Controller_Varien_Action::FLAG_NO_DISPATCH, true);
+                $jsonResponse = array('error' => Mage::helper('payone_core')->__('PAYONE_PAYOLUTION_API_ERRORMESSAGE'));
+                return $controllerAction->getResponse()->setBody(Mage::helper('core')->jsonEncode($jsonResponse));
+            } elseif($oResponse instanceof Payone_Api_Response_Genericpayment_Ok) {
+                $checkoutSession = $this->getFactory()->getSingletonCheckoutSession();
+                $checkoutSession->setPayoneWorkorderId($oResponse->getWorkorderId());
+            }
+        } elseif($aPaymentData['payone_payolution_type'] == 'PYS') {
+            if (empty($aPaymentData['payone_payolution_installment_duration'])) {
+                $controllerAction->setFlag('', Mage_Core_Controller_Varien_Action::FLAG_NO_DISPATCH, true);
+                $jsonResponse = array('error' => Mage::helper('payone_core')->__('Please complete filling out the installment form!'));
+                return $controllerAction->getResponse()->setBody(Mage::helper('core')->jsonEncode($jsonResponse));
+            }
+        }
+    }
+    
+    protected function _getCreditcardConfig()
+    {
+        $storeId = $this->getQuote()->getStoreId();
+        $oConfig = $this->helperConfig()->getConfigGeneral($storeId);        
+        return $oConfig->getPaymentCreditcard();
+    }
+    
+    protected function _performHostedCreditcardChecks($controllerAction)
+    {
+        if ($this->_getCreditcardConfig()->getCcRequestType() == 'hosted-Iframe') {
+            $aPaymentData = $this->getPaymentData();
+            $iExpireDate = $aPaymentData['payone_cardexpiredate'];
+            
+            $iDays = $this->_getCreditcardConfig()->getMinValidityPeriod();
+            if (empty($iDays)) {
+                $iDays = 0;
+            }
+
+            $iTimestamp = time();
+            if ($iDays > 0) {
+                 $iTimestamp += (60 * 60 * 24 * $iDays);
+            }
+            
+            $iCheckNumber = date('ym', $iTimestamp);
+            if($iCheckNumber > $iExpireDate) {
+                $controllerAction->setFlag('', Mage_Core_Controller_Varien_Action::FLAG_NO_DISPATCH, true);
+                $jsonResponse = array('error' => Mage::helper('payone_core')->__('PAYONE_CREDITCARD_VALIDITY_TOO_LOW'));
+                return $controllerAction->getResponse()->setBody(Mage::helper('core')->jsonEncode($jsonResponse));
+            }
         }
     }
 
@@ -146,8 +195,10 @@ class Payone_Core_Model_Observer_Checkout_Onepage_DebitPayment extends Payone_Co
 
         // Perform check:
         $serviceBankaccountCheck = $this->getFactory()
-                                        ->getServiceVerificationBankAccountCheck($paymentMethodConfigId, $this->getQuote()
-                                                                                                              ->getStoreId());
+                                        ->getServiceVerificationBankAccountCheck(
+                                            $paymentMethodConfigId, $this->getQuote()
+                                            ->getStoreId()
+                                        );
         $serviceBankaccountCheck->execute($bankAccountNumber, $bankCode, $bankCountry, $iban, $bic);
     }
 
@@ -162,8 +213,10 @@ class Payone_Core_Model_Observer_Checkout_Onepage_DebitPayment extends Payone_Co
         $paymentMethodConfigId = $paymentData['payone_config_payment_method_id'];
 
         $manageMandateService = $this->getFactory()
-                                     ->getServiceManagementManageMandate($paymentMethodConfigId, $this->getQuote()
-                                                                                                      ->getStoreId());
+                                     ->getServiceManagementManageMandate(
+                                         $paymentMethodConfigId, $this->getQuote()
+                                         ->getStoreId()
+                                     );
 
         // Gather Data:
         $bankAccountNumber = array_key_exists('payone_account_number', $paymentData) ? $paymentData['payone_account_number'] : '';
@@ -185,6 +238,7 @@ class Payone_Core_Model_Observer_Checkout_Onepage_DebitPayment extends Payone_Co
             $checkoutSession->setPayoneSepaMandateIdentification($mandateIdentification);
             $checkoutSession->setPayoneSepaMandateDownloadEnabled($sepaMandateDownloadEnabled);
         }
+
         return $response;
 //    else {
 //            Mage::log($response, null, 'test.log', true);
@@ -210,6 +264,7 @@ class Payone_Core_Model_Observer_Checkout_Onepage_DebitPayment extends Payone_Co
         if (!array_key_exists('payone_config_payment_method_id', $paymentData)) {
             throw new Payone_Core_Exception_PaymentMethodConfigNotFound();
         }
+
         $paymentMethodConfigId = $paymentData['payone_config_payment_method_id'];
         if (empty($paymentMethodConfigId)) {
             throw new Payone_Core_Exception_PaymentMethodConfigNotFound();

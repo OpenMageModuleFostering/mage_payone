@@ -21,9 +21,20 @@
  * @link            http://www.fatchip.com
  */
 
-class Payone_Core_Block_Payment_Method_Form_Ratepay extends Payone_Core_Block_Payment_Method_Form_Abstract {
-    
-    protected function _construct() {
+/**
+ * Class Payone_Core_Block_Payment_Method_Form_Ratepay
+ */
+class Payone_Core_Block_Payment_Method_Form_Ratepay extends Payone_Core_Block_Payment_Method_Form_Abstract
+{
+
+    /**
+     * @var bool
+     */
+    protected $hasTypes = true;
+
+
+    protected function _construct() 
+    {
         parent::_construct();
         $this->setTemplate('payone/core/payment/method/form/ratepay.phtml');
     }
@@ -39,7 +50,27 @@ class Payone_Core_Block_Payment_Method_Form_Ratepay extends Payone_Core_Block_Pa
         if (empty($customerDob)) {
             return true;
         }
+
         return false;
+    }
+
+    /**
+     * Return Grand Total Amount
+     *
+     * @return string
+     */
+    public function getAmount()
+    {
+        return $this->getQuote()->getGrandTotal();
+    }
+
+
+    /**
+     * @return array
+     */
+    protected function getSystemConfigMethodTypes()
+    {
+        return $this->getFactory()->getModelSystemConfigRatePayType()->toSelectArray();
     }
 
     /**
@@ -55,25 +86,51 @@ class Payone_Core_Block_Payment_Method_Form_Ratepay extends Payone_Core_Block_Pa
 
         return false;
     }
-    
-    public function getMatchingRatePayShopId() {
+
+    /**
+     * @return mixed
+     */
+    public function getRatePayCurrency() 
+    {
+        $oMethod = $this->getMethod();
+        $aConfig = $oMethod->getMatchingRatePayConfig();
+        return $aConfig['currency'];
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getMatchingRatePayShopId() 
+    {
         $oMethod = $this->getMethod();
         $aConfig = $oMethod->getMatchingRatePayConfig();
         return $aConfig['shop_id'];
     }
-    
-    public function getRatePayDeviceFingerprintSnippetId() {
+
+    /**
+     * @return mixed
+     */
+    public function getRatePayDeviceFingerprintSnippetId() 
+    {
         $oMethod = $this->getMethod();
         $aConfig = $oMethod->getMatchingRatePayConfig();
         return $aConfig['device_fingerprint_snippet_id'];
     }
-    
-    protected function _setSessionFingerprint($sFingerprint) {
+
+    /**
+     * @param $sFingerprint
+     */
+    protected function _setSessionFingerprint($sFingerprint) 
+    {
         $checkoutSession = $this->getFactory()->getSingletonCheckoutSession();
         $checkoutSession->setRatePayFingerprint($sFingerprint);
     }
-    
-    public function getRatePayDeviceFingerprint() {
+
+    /**
+     * @return string
+     */
+    public function getRatePayDeviceFingerprint() 
+    {
         $checkoutSession = $this->getFactory()->getSingletonCheckoutSession();
         if(!$checkoutSession->getRatePayFingerprint()) {
             $sFingerprint  = $this->getQuote()->getBillingAddress()->getFirstname();
@@ -84,7 +141,34 @@ class Payone_Core_Block_Payment_Method_Form_Ratepay extends Payone_Core_Block_Pa
         } else {
             $sFingerprint = $checkoutSession->getRatePayFingerprint();
         }
+
         return $sFingerprint;
+    }
+
+    /**
+     * Retrieve the payment config method id from Quote.
+     * If it matches payment method, return it, otherwise 0
+     * @return int|mixed
+     */
+    public function getPaymentMethodConfigId()
+    {
+        $preselectedConfigId = $this->getInfoData('payone_config_payment_method_id');
+
+        $preselectPossible = false;
+        if($this->getTypes()){
+            foreach ($this->getTypes() as $type) {
+                if ($type['config_id'] == $preselectedConfigId) {
+                    $preselectPossible = true;
+                }
+            }
+        }
+
+        if ($preselectPossible) {
+            return $preselectedConfigId;
+        }
+        else {
+            return 0;
+        }
     }
     
 }

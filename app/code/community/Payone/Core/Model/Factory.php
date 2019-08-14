@@ -52,6 +52,7 @@ class Payone_Core_Model_Factory
         if ($this->helper === null) {
             $this->helper = Mage::helper('payone_core');
         }
+
         return $this->helper;
     }
 
@@ -1326,6 +1327,7 @@ class Payone_Core_Model_Factory
             $config = $this->getConfig();
             $this->builder = new Payone_Builder($config);
         }
+
         return $this->builder;
     }
 
@@ -1355,6 +1357,7 @@ class Payone_Core_Model_Factory
                 $this->config->setValue('api/default/mapper/currency/currency_properties', $this->getLibCurrencyProperties());
             }
         }
+
         return $this->config;
     }
 
@@ -1433,6 +1436,30 @@ class Payone_Core_Model_Factory
     }
 
     /**
+     * @return Payone_Core_Model_System_Config_TranslationMonths
+     */
+    public function getModelSystemConfigTranslationMonths()
+    {
+        return Mage::getSingleton('payone_core/system_config_translationMonths');
+    }
+    
+    /**
+     * @return Payone_Core_Model_System_Config_TranslationErrors
+     */
+    public function getModelSystemConfigTranslationErrors()
+    {
+        return Mage::getSingleton('payone_core/system_config_translationErrors');
+    }
+    
+    /**
+     * @return Payone_Core_Model_System_Config_TranslationPlaceholders
+     */
+    public function getModelSystemConfigTranslationPlaceholders()
+    {
+        return Mage::getSingleton('payone_core/system_config_translationPlaceholders');
+    }
+
+    /**
      * @return Payone_Core_Model_System_Config_ResponseType
      */
     public function getModelSystemConfigResponseType()
@@ -1465,6 +1492,15 @@ class Payone_Core_Model_Factory
         return Mage::getSingleton('payone_core/system_config_creditScore');
     }
 
+    /**
+     * @return Mage_Adminhtml_Model_System_Config_Source_Locale
+     */
+    public function getModelSystemConfigLocale()
+    {
+        return Mage::getSingleton('adminhtml/system_config_source_locale');
+    }
+
+    
     /**
      * @return Mage_Adminhtml_Model_System_Config_Source_Order_Status
      */
@@ -1567,6 +1603,14 @@ class Payone_Core_Model_Factory
     public function getModelSystemConfigWalletType()
     {
         return Mage::getSingleton('payone_core/system_config_walletType');
+    }
+
+    /**
+     * @return Payone_Core_Model_System_Config_RatepayType
+     */
+    public function getModelSystemConfigRatePayType()
+    {
+        return Mage::getSingleton('payone_core/system_config_ratepayType');
     }
 
     /**

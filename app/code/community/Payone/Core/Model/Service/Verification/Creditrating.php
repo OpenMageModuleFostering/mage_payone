@@ -91,31 +91,9 @@ class Payone_Core_Model_Service_Verification_Creditrating
         catch (Exception $ex) {
             $result = $handler->handleException($ex);
         }
+
         return $result;
 
-    }
-
-    /**
-     * @param Mage_Sales_Model_Quote $quote
-     * @return bool
-     */
-    protected function isRequiredForQuote(Mage_Sales_Model_Quote $quote)
-    {
-        $config = $this->getConfig();
-        $quoteTotal = $quote->getSubtotal();
-
-        /** @var $method Payone_Core_Model_Config_Payment_Method_Interface */
-        $maxOrderTotal = $config->getMaxOrderTotal();
-        $minOrderTotal = $config->getMinOrderTotal();
-
-        if (!empty($maxOrderTotal) and $maxOrderTotal < $quoteTotal) {
-            return false; // quote total too high.
-        }
-
-        if (!empty($minOrderTotal) and $minOrderTotal > $quoteTotal) {
-            return false; // quote total is too low.
-        }
-        return true;
     }
 
     /**
@@ -206,6 +184,7 @@ class Payone_Core_Model_Service_Verification_Creditrating
         if ($counter % $frequency === 0) {
             return true;
         }
+
         return false;
 
     }

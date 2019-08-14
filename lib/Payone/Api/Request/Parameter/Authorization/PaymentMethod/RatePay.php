@@ -30,17 +30,29 @@ class Payone_Api_Request_Parameter_Authorization_PaymentMethod_RatePay
      * @var string
      */
     protected $financingtype = NULL;
-    
+    /**
+     * @var null
+     */
     protected $paydata = NULL;
-    
+    /**
+     * @var null
+     */
     protected $birthday = NULL;
-    
+    /**
+     * @var null
+     */
     protected $telephonenumber = NULL;
     
     /**
      * @var string
      */
     protected $api_version = NULL;
+
+    /**
+     * @var string
+     */
+    protected $ratePayType = NULL;
+
 
     public function setApiVersion()
     {
@@ -53,6 +65,22 @@ class Payone_Api_Request_Parameter_Authorization_PaymentMethod_RatePay
     public function getApiVersion()
     {
         return $this->api_version;
+    }
+
+    /**
+     * @param $ratePayType
+     */
+    public function setRatePayType($ratePayType)
+    {
+        $this->ratePayType = $ratePayType;
+    }
+
+    /**
+     * @return string
+     */
+    public function getRatePayType()
+    {
+        return $this->ratePayType;
     }
     
     /**
@@ -76,7 +104,8 @@ class Payone_Api_Request_Parameter_Authorization_PaymentMethod_RatePay
     /**
      * @param Payone_Api_Request_Parameter_Paydata_Paydata $paydata
      */
-    public function setPaydata($paydata) {
+    public function setPaydata($paydata) 
+    {
         $this->paydata = $paydata;
     }
 
@@ -84,7 +113,8 @@ class Payone_Api_Request_Parameter_Authorization_PaymentMethod_RatePay
      * 
      * @return Payone_Api_Request_Parameter_Paydata_Paydata
      */
-    public function getPaydata() {
+    public function getPaydata() 
+    {
         return $this->paydata;
     }
     
