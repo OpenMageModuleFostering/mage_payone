@@ -131,6 +131,10 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
                 $requestType = Payone_Api_Enum_RequestType::PREAUTHORIZATION;
             }
         }
+        // Always use PREAUTHORIZATION for Barzahlen
+        if ($paymentMethod instanceof Payone_Core_Model_Payment_Method_Barzahlen) {
+            $requestType = Payone_Api_Enum_RequestType::PREAUTHORIZATION;
+        }
 
         $request->setRequest($requestType);
         $request->setAid($this->configPayment->getAid());
@@ -386,7 +390,7 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
 
         $invoicing = new Payone_Api_Request_Parameter_Invoicing_Transaction();
         $invoicing->setInvoiceappendix($invoiceAppendix);
-
+        
         // Order items:
         foreach ($order->getItemsCollection() as $key => $itemData) {
             /** @var $itemData Mage_Sales_Model_Order_Item */
@@ -530,9 +534,15 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
         }
         elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_Wallet) {
             $payment = new Payone_Api_Request_Parameter_Authorization_PaymentMethod_Wallet();
-            // @comment currently hardcoded because there is no other Type
-            $payment->setWallettype(Payone_Api_Enum_WalletType::PAYPAL_EXPRESS);
-
+            $sType = false;
+            
+            $aPostPayment = Mage::app()->getRequest()->getPost('payment');
+            if($aPostPayment && array_key_exists('payone_wallet_type', $aPostPayment)) {
+                $sType = $aPostPayment['payone_wallet_type'];
+            } else {
+                $sType = Payone_Api_Enum_WalletType::PAYPAL_EXPRESS;
+            }
+            $payment->setWallettype($sType);
             $isRedirect = true;
         }
         elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_DebitPayment) {
@@ -560,6 +570,13 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
                     $payment->setMandateIdentification($mandateIdentification);
                 }
             }
+        } elseif($paymentMethod instanceof Payone_Core_Model_Payment_Method_CreditcardIframe) {
+            $payment = new Payone_Api_Request_Parameter_Authorization_PaymentMethod_CreditCardIframe();
+            $isRedirect = true;
+        } elseif($paymentMethod instanceof Payone_Core_Model_Payment_Method_Barzahlen) {
+            $payment = new Payone_Api_Request_Parameter_Authorization_PaymentMethod_Barzahlen();
+            $payment->setApiVersion();
+            $payment->setCashtype();
         }
 
         if ($isRedirect === true) {
@@ -589,6 +606,9 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
         elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_Creditcard) {
             $clearingType = Payone_Enum_ClearingType::CREDITCARD;
         }
+        elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_CreditcardIframe) {
+            $clearingType = Payone_Enum_ClearingType::CREDITCARD_IFRAME;
+        }
         elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_OnlineBankTransfer) {
             $clearingType = Payone_Enum_ClearingType::ONLINEBANKTRANSFER;
         }
@@ -609,6 +629,9 @@ abstract class Payone_Core_Model_Mapper_ApiRequest_Payment_Authorize_Abstract
         }
         elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_SafeInvoice) {
             $clearingType = Payone_Enum_ClearingType::FINANCING;
+        }
+        elseif ($paymentMethod instanceof Payone_Core_Model_Payment_Method_Barzahlen) {
+            $clearingType = Payone_Enum_ClearingType::BARZAHLEN;
         }
 
         return $clearingType;

@@ -52,6 +52,12 @@
 "New Creditcard","Kreditkarte"
 "Add Creditcard","Kreditkarte hinzufügen"
 "Edit Creditcard","Kreditkarte bearbeiten"
+"New Creditcard Channel Frontend","Kreditkarte Channel Frontend"
+"Add Creditcard Channel Frontend","Kreditkarte Channel Frontend hinzufügen"
+"Edit Creditcard Channel Frontend","Kreditkarte Channel Frontend bearbeiten"
+"New Barzahlen","Barzahlen"
+"Add Barzahlen","Barzahlen hinzufügen"
+"Edit Barzahlen","Barzahlen bearbeiten"
 "New Debit Payment","Lastschrift"
 "Add Debit Payment","Lastschrift hinzufügen"
 "Edit Debit Payment","Lastschrift bearbeiten"
@@ -112,9 +118,11 @@
 "Online Bank Transfer","Onlineüberweisung"
 "Cash on Delivery","Nachnahme"
 "Wallet","Wallet"
+"Creditcard Channel Frontend","Kreditkarte Channel Frontend"
 "Transactionstatus-Message","Transaktionsstatus-Meldung"
 "Magento-Status","Magento-Status"
 "Add Statusmapping","Füge Statusmapping hinzu"
+"Barzahlen","Barzahlen"
 
 "Address checking","Adressprüfung"
 "Enabled","Aktiviert"
@@ -910,3 +918,9 @@
 "You should advise your customers that you perform credit checks with the InfoScore Consumer Data GmbH.","Sie sollten in Ihrem Shop außerdem in geeigneter Weise darauf hinweisen, dass Sie Bonitätsprüfungen über die InfoScore Consumer Data GmbH durchführen."
 
 "Checkout with PayPal Express","Checkout mit PayPal Express"
+
+"Payment with Yapital","Bezahlung mit Yapital"
+"There are 2 possibilities to pay with Yapital. Either you open the Yapital-app, select payment from the app-menu and scan the QR-code or you click the orange LOGIN button and log in on the next site, using your Yapital-login-data. After a successful transaction you will be redirected back to the shop.","Sie haben zwei M&ouml;glichkeiten mit Yapital zu bezahlen. Entweder &ouml;ffnen Sie die Yapital-App, w&auml;hlen Bezahlen aus dem App-Men&uuml; und scannen den unten aufgef&uuml;hrten QR-Code. Oder Sie loggen sich mit Ihren Yapital-Zugangsdaten &uuml;ber den orangen LOGIN Button auf dieser Seite ein. Nach erfolgreicher Transaktion gelangen Sie automatisch zur&uuml;ck in den Shop."
+"Every transaction is handled in realtime with your Yapital-account. Your bankdata is not transmitted by Yapital, only the necessary transactiondata.","Alle Transaktionen werden in Echtzeit &uuml;ber Ihren Yapital-Account abgewickelt. Ihre Bankdaten werden nicht von Yapital weitergeleitet, sondern lediglich die erforderlichen Transaktionsdaten."
+
+"Payment with creditcard","Bezahlung mit Kreditkarte"

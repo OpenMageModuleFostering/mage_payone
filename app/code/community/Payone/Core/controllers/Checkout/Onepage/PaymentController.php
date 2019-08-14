@@ -58,7 +58,10 @@ class Payone_Core_Checkout_Onepage_PaymentController extends Payone_Core_Control
 
             if ($success === true) {
                 // Payment is okay. Redirect to standard Magento success page:
-                $this->_redirect('checkout/onepage/success');
+                $this->_redirect('checkout/onepage/success', array(
+                    '_nosid' => true,
+                    '_secure' => Mage::app()->getStore()->isCurrentlySecure())
+                );
                 return;
             }
         } catch (Exception $e) {

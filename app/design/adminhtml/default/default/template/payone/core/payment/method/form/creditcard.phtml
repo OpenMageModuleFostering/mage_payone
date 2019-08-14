@@ -102,5 +102,6 @@ $displayCvc = null;
         <input type="hidden" id="<?php echo $code ?>_config_id" name="payment[payone_config_payment_method_id]" value=""/>
         <input type="hidden" id="<?php echo $code ?>_config" name="payment[request_config]"
                value="<?php echo $this->escapeHtml($this->getClientApiConfigAsJson()); ?>" class=""/>
+        <input type="hidden" id="payone_cc_check_validation" value="<?php echo $this->getPayoneCreditCardCheckValidation();?>"/>
     </li>
 </ul>

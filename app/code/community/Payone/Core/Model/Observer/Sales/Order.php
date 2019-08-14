@@ -95,7 +95,6 @@ class Payone_Core_Model_Observer_Sales_Order
             $customer->save();
         }
 
-
         if(($payment->getMethodInstance() instanceof Payone_Core_Model_Payment_Method_Abstract) && (!$payment->getOrder()->getCustomerIsGuest())) {
             $customerId = $payment->getOrder()->getCustomer()->getId();
             $customerSavedData = array();

@@ -24,7 +24,7 @@
 <config>
     <modules>
         <Payone_Core>
-            <version>3.3.3</version>
+            <version>3.3.8</version>
         </Payone_Core>
     </modules>
 
@@ -533,6 +533,16 @@
                 <model>payone_core/payment_method_creditcard</model>
                 <group>payone</group>
             </payone_creditcard>
+            <payone_creditcard_iframe translate="title" module="payone_core">
+                <title>PAYONE - CreditCard Channel Frontend</title>
+                <model>payone_core/payment_method_creditcardIframe</model>
+                <group>payone</group>
+            </payone_creditcard_iframe>
+            <payone_barzahlen translate="title" module="payone_core">
+                <title>PAYONE - Barzahlen</title>
+                <model>payone_core/payment_method_barzahlen</model>
+                <group>payone</group>
+            </payone_barzahlen>
             <payone_cash_on_delivery translate="title" module="payone_core">
                 <title>PAYONE - Cash on Delivery</title>
                 <model>payone_core/payment_method_cashOnDelivery</model>
@@ -608,6 +618,12 @@
             <template_cash_on_delivery>
                 <use_global>1</use_global>
             </template_cash_on_delivery>
+            <template_creditcard_iframe>
+                <use_global>1</use_global>
+            </template_creditcard_iframe>
+            <template_barzahlen>
+                <use_global>1</use_global>
+            </template_barzahlen>
         </payone_payment>
         <payone_general>
             <global>
@@ -652,7 +668,7 @@ Detaillierte Informationen zur Arbeitsweise der ABC finde ich unter www.abc.de/f
                 <cron_expr>* * * * *</cron_expr>
                 <valid_ips><![CDATA[213.178.72.196
 213.178.72.197
-185.60.20.0
+185.60.20.*
 217.70.200.*]]></valid_ips>
                 <proxy_mode>0</proxy_mode>
             </transactionstatus_processing>

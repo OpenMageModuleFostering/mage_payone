@@ -41,9 +41,11 @@ class Payone_Core_Block_Paypal_Express_Review extends Mage_Paypal_Block_Express_
     protected function _beforeToHtml()
     {
         $methodInstance = $this->_quote->getPayment()->getMethodInstance();
+        // are we in a secure environment?
+        $isSecure = Mage::app()->getStore()->isCurrentlySecure();
         $this->setPaymentMethodTitle($methodInstance->getTitle());
-        $this->setUpdateOrderSubmitUrl($this->getUrl("{$this->_paypalActionPrefix}/express/updateOrder"));
-        $this->setUpdateShippingMethodsUrl($this->getUrl("{$this->_paypalActionPrefix}/express/updateShippingMethods"));
+        $this->setUpdateOrderSubmitUrl($this->getUrl("{$this->_paypalActionPrefix}/express/updateOrder", array('_secure' => $isSecure)));
+        $this->setUpdateShippingMethodsUrl($this->getUrl("{$this->_paypalActionPrefix}/express/updateShippingMethods", array('_secure' => $isSecure)));
 
         $this->setShippingRateRequired(true);
         if ($this->_quote->getIsVirtual()) {
@@ -66,13 +68,13 @@ class Payone_Core_Block_Paypal_Express_Review extends Mage_Paypal_Block_Express_
             }
 
             // misc shipping parameters
-            $this->setShippingMethodSubmitUrl($this->getUrl("{$this->_paypalActionPrefix}/express/saveShippingMethod"))
+            $this->setShippingMethodSubmitUrl($this->getUrl("{$this->_paypalActionPrefix}/express/saveShippingMethod", array('_secure' => $isSecure)))
                 ->setCanEditShippingAddress(false)
                 ->setCanEditShippingMethod($this->_quote->getMayEditShippingMethod())
             ;
         }
 
         $this->setEditUrl(null) //$this->getUrl("{$this->_paypalActionPrefix}/express/edit")
-            ->setPlaceOrderUrl($this->getUrl("payone_core/pexpress/placeOrder"));
+            ->setPlaceOrderUrl($this->getUrl("payone_core/pexpress/placeOrder", array('_secure' => $isSecure)));
     }
 }

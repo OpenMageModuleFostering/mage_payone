@@ -57,9 +57,8 @@ abstract class Payone_Api_Response_Abstract implements Payone_Api_Response_Inter
     public function init(array $data = array())
     {
         foreach ($data as $key => $value) {
-            $key = ucwords(str_replace('_', ' ', $key));
+            $key = ucwords(str_replace(array('_', '[', ']'), ' ', $key));
             $method = 'set' . str_replace(' ', '', $key);
-
             if (method_exists($this, $method)) {
                 $this->{$method}($value);
             }
