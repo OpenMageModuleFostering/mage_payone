@@ -1,0 +1,16 @@
+{
+    "name": "OpenMageModuleFostering/Mage_Payone",
+    "type": "magento-module",
+    "license": "Open-Software-License-(OSL)",
+    "homepage": "",
+    "description": "PAYONE FinanceGate payment gateway for all german online and offline payment methods including PayPal, all major Credit Cards and Maestro.",
+    "authors": [
+    {
+        "name": "noovias",
+        "email": "info@noovias.com"
+    }
+],
+    "suggest": {
+        "magento-hackathon/magento-composer-installer": "*"
+    }
+}
