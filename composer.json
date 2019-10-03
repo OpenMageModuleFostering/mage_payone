@@ -1,16 +1,19 @@
 {
-    "name": "OpenMageModuleFostering/Mage_Payone",
+    "name": "OpenMageModuleFostering\/Mage_Payone",
     "type": "magento-module",
     "license": "Open-Software-License-(OSL)",
     "homepage": "",
     "description": "PAYONE Payment for Magento: One partner. One contract. One payment.",
     "authors": [
-    {
-        "name": "PAYONE",
-        "email": "magento@payone.de"
-    }
-],
+        {
+            "name": "PAYONE",
+            "email": "magento@payone.de"
+        }
+    ],
     "suggest": {
-        "magento-hackathon/magento-composer-installer": "*"
-    }
+        "magento-hackathon\/magento-composer-installer": "*"
+    },
+    "keywords": [
+        "openmage-module"
+    ]
 }
