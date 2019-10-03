@@ -1,7 +1,7 @@
 {
-    "name": "OpenMageModuleFostering\/Mage_Payone",
+    "name": "openmage-module-fostering\/mage_payone",
     "type": "magento-module",
-    "license": "Open-Software-License-(OSL)",
+    "license": "OSL-3.0",
     "homepage": "",
     "description": "PAYONE Payment for Magento: One partner. One contract. One payment.",
     "authors": [
